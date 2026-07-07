@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STeP CMU Blueprint Portal - บริการตรวจสอบและขอคัดลอกแบบแปลนอาคาร</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Header & Navigation -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-icon">🏢</div>
+      <div class="logo-text">
+        <h1>STeP CMU Blueprint Portal</h1>
+        <span>Innovation & Facility Management</span>
+      </div>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-view="view-request">🏠 ยื่นคำร้องบริการแบบแปลน</button>
+      <button class="nav-btn" data-view="view-status">🔍 ตรวจสอบสถานะ</button>
+      <button class="nav-btn" data-view="view-admin-dashboard" id="nav-admin-dashboard" style="display:none;">🛡️ แผงควบคุม (Dashboard)</button>
+      <button class="nav-btn" data-view="view-admin-kb" id="nav-admin-kb" style="display:none;">📚 ฐานความรู้กฎหมาย (KB)</button>
+      <button class="nav-btn" data-view="view-admin-login" id="nav-admin-login" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);">🔒 เข้าสู่ระบบเจ้าหน้าที่</button>
+      <span id="admin-user-display" style="display:flex; align-items:center; color:#fbbf24; font-size:0.85rem; padding: 0 8px; font-weight:600;"></span>
+      <button class="nav-btn btn-danger" id="btn-logout" style="display:none; padding: 6px 14px; font-size:0.85rem;">🚪 ออกจากระบบ</button>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- VIEW 1: CITIZEN SUBMIT REQUEST (No AI Chat) -->
+    <section id="view-request" class="view-section active">
+      <div style="text-align: center; margin-bottom: 2.5rem; animation: fadeIn 0.6s ease;">
+        <h2 style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-bottom: 10px;">ระบบบริการตรวจสอบและคัดลอกแบบแปลนอาคารสถานที่</h2>
+        <p style="color: var(--text-muted); max-width: 750px; margin: 0 auto; font-size: 1.05rem;">
+          อำนวยความสะดวกสำหรับผู้รับบริการและผู้ประกอบการ ในการยื่นแบบแปลนเพื่อตรวจสอบความถูกต้องตามกฎหมายอาคาร และการยื่นคำร้องขอคัดลอกเอกสารแบบแปลนเดิมของ STeP CMU
+        </p>
+      </div>
+
+      <!-- Form Type Tabs -->
+      <div class="form-tabs">
+        <button class="form-tab-btn active" data-form="form-review-view" id="tab-review-btn">1️⃣ ยื่นคำร้องขอตรวจสอบแบบแปลน</button>
+        <button class="form-tab-btn" data-form="form-copy-view" id="tab-copy-btn">2️⃣ ยื่นคำร้องขอแบบแปลนอาคาร</button>
+      </div>
+
+      <!-- FORM 1: SUBMIT BLUEPRINT FOR REVIEW -->
+      <div id="form-review-view" class="form-sub-view active">
+        <div class="glass-card">
+          <div class="card-header">
+            <h2>📄 แบบฟอร์มยื่นคำร้องขอตรวจสอบแบบแปลน</h2>
+            <p>สำหรับผู้ประกอบการ/ผู้รับบริการที่ต้องการยื่นแบบแปลนเพื่อขออนุมัติปรับปรุง ตกแต่ง ต่อเติม หรือก่อสร้าง</p>
+          </div>
+          
+          <form id="form-submit-request" class="form-grid">
+            <div class="form-group">
+              <label for="req-name">👤 ชื่อ-นามสกุล ผู้ยื่นคำร้อง *</label>
+              <input type="text" id="req-name" placeholder="เช่น นายวิศวกรรม รักนวัตกรรม" required>
+            </div>
+            <div class="form-group">
+              <label for="req-email">📧 อีเมลติดต่อกลับ (ระบบจะส่งผลการตรวจทางอีเมลนี้) *</label>
+              <input type="email" id="req-email" placeholder="เช่น example@domain.com" required>
+            </div>
+            <div class="form-group">
+              <label for="req-phone">📱 เบอร์โทรศัพท์ติดต่อ</label>
+              <input type="tel" id="req-phone" placeholder="เช่น 081-234-5678">
+            </div>
+            <div class="form-group">
+              <label for="req-org">🏢 หน่วยงาน / คณะ / บริษัท</label>
+              <input type="text" id="req-org" placeholder="เช่น บริษัท นวัตกรรมไทย จำกัด / คณะวิศวกรรมศาสตร์">
+            </div>
+            <div class="form-group full-width">
+              <label for="req-type">🏗️ ประเภทของงานอาคารที่ต้องการยื่นตรวจสอบ *</label>
+              <select id="req-type" required>
+                <option value="">-- กรุณาเลือกประเภทงาน --</option>
+                <option value="งานปรับปรุงตกแต่งภายในอาคาร (Interior Renovation)">งานปรับปรุงตกแต่งภายในอาคาร (Interior Renovation)</option>
+                <option value="งานต่อเติมโครงสร้างภายนอก / กันสาด / พื้นที่ใช้สอย">งานต่อเติมโครงสร้างภายนอก / กันสาด / พื้นที่ใช้สอย</option>
+                <option value="งานระบบไฟฟ้า ประปา และปรับอากาศ (MEP Systems)">งานระบบไฟฟ้า ประปา และปรับอากาศ (MEP Systems)</option>
+                <option value="งานก่อสร้างอาคารสำนักงาน / พื้นที่สาธารณะใหม่">งานก่อสร้างอาคารสำนักงาน / พื้นที่สาธารณะใหม่</option>
+                <option value="อื่นๆ (ระบุในรายละเอียด)">อื่นๆ</option>
+              </select>
+            </div>
+            
+            <div class="form-group full-width">
+              <label>📎 แนบไฟล์เอกสารแบบแปลน (PDF เท่านั้น) *</label>
+              <div id="file-drop-zone" class="file-drop-zone">
+                <i>📑</i>
+                <h4 style="color:#ffffff; margin-bottom:6px;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</h4>
+                <p style="color:var(--text-muted); font-size:0.85rem;">รองรับไฟล์ .pdf ขนาดสูงสุด 20 MB</p>
+                <div id="file-name-display" style="margin-top:12px; font-size:0.9rem; color:#fbbf24; font-weight:600;"></div>
+                <input type="file" id="file-blueprint" accept=".pdf" style="display:none;" required>
+              </div>
+            </div>
+
+            <div class="form-group full-width" style="text-align: center; margin-top: 1rem;">
+              <button type="submit" class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;">
+                🚀 ยื่นคำร้องขอตรวจสอบแบบแปลน
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- FORM 2: REQUEST BLUEPRINT DOCUMENT COPY -->
+      <div id="form-copy-view" class="form-sub-view">
+        <div class="glass-card">
+          <div class="card-header">
+            <h2>🏢 แบบฟอร์มยื่นคำร้องขอแบบแปลนอาคาร</h2>
+            <p>สำหรับผู้รับบริการหรือหน่วยงานที่ต้องการขอคัดลอกหรือยืมเอกสารแบบแปลนอาคารสถานที่ของ STeP CMU ไปใช้งาน โดยต้องระบุวัตถุประสงค์</p>
+          </div>
+          
+          <form id="form-request-copy" class="form-grid">
+            <div class="form-group">
+              <label for="copy-name">👤 ชื่อ-นามสกุล ผู้ยื่นคำร้อง *</label>
+              <input type="text" id="copy-name" placeholder="เช่น นายสถาปัตย์ รักงานสร้าง" required>
+            </div>
+            <div class="form-group">
+              <label for="copy-email">📧 อีเมลติดต่อกลับ (ระบบจะจัดส่งไฟล์/แจ้งผลทางอีเมลนี้) *</label>
+              <input type="email" id="copy-email" placeholder="เช่น example@domain.com" required>
+            </div>
+            <div class="form-group">
+              <label for="copy-phone">📱 เบอร์โทรศัพท์ติดต่อ *</label>
+              <input type="tel" id="copy-phone" placeholder="เช่น 081-234-5678" required>
+            </div>
+            <div class="form-group">
+              <label for="copy-org">🏢 หน่วยงาน / คณะ / บริษัท *</label>
+              <input type="text" id="copy-org" placeholder="เช่น คณะวิศวกรรมศาสตร์ / บริษัท... จำกัด" required>
+            </div>
+            <div class="form-group full-width">
+              <label for="copy-building">🏗️ อาคาร / บริเวณพื้นที่ที่ต้องการขอแบบแปลน *</label>
+              <input type="text" id="copy-building" placeholder="เช่น อาคารอำนวยการอุทยานวิทยาศาสตร์ภาคเหนือ (STeP CMU) - ชั้น 2 บริเวณห้องปฏิบัติการ" required>
+            </div>
+            <div class="form-group full-width">
+              <label for="copy-purpose">🎯 วัตถุประสงค์ในการนำไปใช้งาน *</label>
+              <select id="copy-purpose" required>
+                <option value="">-- กรุณาเลือกวัตถุประสงค์ในการนำไปใช้งาน --</option>
+                <option value="เพื่อการปรับปรุงซ่อมแซมพื้นที่ใช้สอยภายใน">เพื่อการปรับปรุงซ่อมแซมพื้นที่ใช้สอยภายใน</option>
+                <option value="เพื่อการศึกษาและวิจัยทางด้านวิศวกรรม/สถาปัตยกรรม">เพื่อการศึกษาและวิจัยทางด้านวิศวกรรม/สถาปัตยกรรม</option>
+                <option value="เพื่อการออกแบบต่อเติมอาคารสถานที่">เพื่อการออกแบบต่อเติมอาคารสถานที่</option>
+                <option value="เพื่อประกอบการยื่นขออนุญาตต่อหน่วยงานราชการ">เพื่อประกอบการยื่นขออนุญาตต่อหน่วยงานราชการ</option>
+                <option value="เพื่อการวางแผนระบบสาธารณูปโภคและระบบประกอบอาคาร (MEP)">เพื่อการวางแผนระบบสาธารณูปโภคและระบบประกอบอาคาร (MEP)</option>
+                <option value="อื่นๆ (ระบุรายละเอียดเพิ่มเติมในช่องด้านล่าง)">อื่นๆ (ระบุรายละเอียดเพิ่มเติมในช่องด้านล่าง)</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label for="copy-notes">📝 รายละเอียดเพิ่มเติม / คำอธิบายวัตถุประสงค์</label>
+              <textarea id="copy-notes" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติม เช่น ช่วงเวลาที่ต้องการใช้ หรือระบุวัตถุประสงค์กรณีเลือกอื่นๆ"></textarea>
+            </div>
+            
+            <div class="form-group full-width">
+              <label>📎 แนบไฟล์หนังสือขอความอนุเคราะห์ / เอกสารที่เกี่ยวข้อง (PDF - ไม่บังคับ)</label>
+              <div id="copy-file-drop-zone" class="file-drop-zone">
+                <i>📑</i>
+                <h4 style="color:#ffffff; margin-bottom:6px;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่ (ถ้ามี)</h4>
+                <p style="color:var(--text-muted); font-size:0.85rem;">รองรับไฟล์ .pdf ขนาดสูงสุด 20 MB (เช่น หนังสือขอความอนุเคราะห์จากหน่วยงาน)</p>
+                <div id="copy-file-name-display" style="margin-top:12px; font-size:0.9rem; color:#fbbf24; font-weight:600;"></div>
+                <input type="file" id="file-copy-doc" accept=".pdf" style="display:none;">
+              </div>
+            </div>
+
+            <div class="form-group full-width" style="text-align: center; margin-top: 1rem;">
+              <button type="submit" class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;">
+                🚀 ยื่นคำร้องขอแบบแปลนอาคาร
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: CHECK STATUS -->
+    <section id="view-status" class="view-section">
+      <div class="glass-card" style="max-width: 700px; margin: 0 auto;">
+        <div class="card-header" style="text-align: center;">
+          <h2>🔍 ตรวจสอบสถานะคำร้องแบบ Real-time</h2>
+          <p>กรอกรหัสติดตามคำร้องที่ท่านได้รับทางอีเมล (เช่น REQ-1001) เพื่อเช็คสถานะและข้อความตอบกลับจากวิศวกร</p>
+        </div>
+        <form id="form-check-status" style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
+          <input type="text" id="status-code-input" placeholder="พิมพ์รหัสคำร้อง เช่น REQ-1001" style="font-size:1.1rem; text-transform:uppercase; text-align:center;" required>
+          <button type="submit" class="btn btn-primary" style="white-space: nowrap; padding: 0 25px;">⚡ ค้นหา</button>
+        </form>
+        <div id="status-result-container"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ADMIN LOGIN -->
+    <section id="view-admin-login" class="view-section">
+      <div class="glass-card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+        <h2 style="color:#ffffff;">เข้าสู่ระบบหลังบ้านสำหรับเจ้าหน้าที่</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin: 10px 0 20px;">
+          ระบบรักษาความปลอดภัยแบบ Passwordless (Magic Link)<br>
+          กรุณากรอกอีเมลผู้ดูแลระบบเพื่อรับลิงก์เข้าสู่ระบบทางอีเมลของคุณ
+        </p>
+        <form id="form-admin-login" style="display: flex; flex-direction: column; gap: 15px;">
+          <input type="email" id="login-email" placeholder="กรอกอีเมล @step.cmu.ac.th หรืออีเมลแอดมิน" style="text-align:center; font-size:1rem;" required>
+          <button type="submit" class="btn btn-primary" style="padding: 14px;">🚀 ส่งลิงก์เข้าสู่ระบบ (Magic Link)</button>
+        </form>
+        <div id="login-msg-box"></div>
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); font-size:0.8rem; color:var(--text-dim);">
+          *สงวนสิทธิ์เฉพาะรายชื่อผู้ดูแลระบบ 7 ท่านที่ได้รับการแต่งตั้งในฐานข้อมูล Google Sheet เท่านั้น
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: ADMIN DASHBOARD (Protected) -->
+    <section id="view-admin-dashboard" class="view-section">
+      <div class="glass-card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h2>🛡️ แผงควบคุมและจัดการคำร้อง (Admin Dashboard)</h2>
+            <p>ตรวจสอบไฟล์แปลน วิเคราะห์ความถูกต้องด้วย AI และตอบกลับผู้ใช้แบบ Threading Email</p>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAdminRequests()">🔄 รีเฟรชข้อมูล</button>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>รหัส / วันที่</th>
+                <th>ผู้ยื่นคำร้อง / หน่วยงาน</th>
+                <th>ประเภทงาน / วัตถุประสงค์</th>
+                <th>ไฟล์แนบ</th>
+                <th>สถานะปัจจุบัน</th>
+                <th>จัดการและ AI ช่วยตรวจ</th>
+              </tr>
+            </thead>
+            <tbody id="admin-requests-tbody">
+              <tr>
+                <td colspan="6" style="text-align:center; color:var(--text-muted); padding: 2rem;">กำลังดึงข้อมูล...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: KNOWLEDGE BASE MANAGER (Protected) -->
+    <section id="view-admin-kb" class="view-section">
+      <div class="glass-card">
+        <div class="card-header">
+          <h2>📚 จัดการฐานความรู้กฎหมายและระเบียบอาคาร (AI Knowledge Base)</h2>
+          <p>ข้อมูลกฎหมายและคู่มือเหล่านี้จะถูกใช้โดย AI Gemini 2.5 Flash ในการวิเคราะห์และตรวจสอบแบบแปลนอัตโนมัติ</p>
+        </div>
+
+        <!-- Upload KB Form -->
+        <div style="background: rgba(20, 20, 20, 0.9); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.3); margin-bottom: 2rem;">
+          <h4 style="color:#fbbf24; margin-bottom: 1rem;">⬆️ อัปโหลดเอกสารกฎหมาย / คู่มือใหม่เข้าสู่ระบบ</h4>
+          <form id="form-upload-kb" class="form-grid" style="align-items: end;">
+            <div>
+              <label for="kb-category">หมวดหมู่เอกสาร</label>
+              <select id="kb-category" required>
+                <option value="กฎกระทรวง / พ.ร.บ.">กฎกระทรวง / พ.ร.บ.</option>
+                <option value="มาตรฐาน วสท. / โครงสร้าง">มาตรฐาน วสท. / โครงสร้าง</option>
+                <option value="ข้อกำหนดภายใน STeP CMU">ข้อกำหนดภายใน STeP CMU</option>
+                <option value="คู่มือปฏิบัติงานวิศวกร">คู่มือปฏิบัติงานวิศวกร</option>
+              </select>
+            </div>
+            <div>
+              <label for="kb-summary">คำอธิบายสรุป / จุดเน้นสำคัญสำหรับ AI *</label>
+              <input type="text" id="kb-summary" placeholder="เช่น สรุปข้อกำหนดวัสดุทนไฟและระยะร่นแนวอาคาร 2566" required>
+            </div>
+            <div>
+              <label id="kb-file-label" class="btn btn-secondary" style="width:100%; cursor:pointer; text-align:center; justify-content:center;">📑 เลือกไฟล์ PDF กฎหมาย / คู่มือ</label>
+              <input type="file" id="kb-file-input" accept=".pdf" style="display:none;" required>
+            </div>
+            <div>
+              <button type="submit" class="btn btn-primary" style="width:100%;">🚀 อัปโหลดเข้า KB</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- KB List Container -->
+        <div id="kb-list-container"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: LOADING SPINNER -->
+  <div id="modal-loading" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; text-align: center; padding: 2.5rem;">
+      <div class="spinner" style="width: 45px; height: 45px; margin-bottom: 1rem;"></div>
+      <h3 style="color: #ffffff; margin-bottom: 8px;">กำลังดำเนินการ...</h3>
+      <p id="loading-text" style="color: var(--text-muted); font-size: 0.9rem;">กรุณารอสักครู่ ระบบกำลังเชื่อมต่อเซิร์ฟเวอร์</p>
+    </div>
+  </div>
+
+  <!-- MODAL 2: SUBMISSION SUCCESS -->
+  <div id="modal-success" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2.5rem;">
+      <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎉</div>
+      <h2 style="color: #fbbf24; margin-bottom: 10px;">ยื่นคำร้องสำเร็จเรียบร้อย!</h2>
+      <p style="color: var(--text-muted); margin-bottom: 20px;">ระบบได้บันทึกข้อมูลของท่านลงในฐานข้อมูล และส่งอีเมลยืนยันการรับเรื่องไปที่ <strong id="success-email" style="color:#ffffff;"></strong> แล้ว</p>
+      
+      <div style="background: rgba(245, 158, 11, 0.15); border: 1px dashed rgba(245, 158, 11, 0.6); padding: 1.5rem; border-radius: 12px; margin-bottom: 20px;">
+        <span style="font-size:0.85rem; color:var(--text-muted); display:block;">รหัสติดตามคำร้องของท่าน</span>
+        <strong id="success-req-id" style="font-size:2.2rem; color:#fbbf24; letter-spacing:1px;">REQ-1001</strong>
+      </div>
+
+      <p style="color: #34d399; font-size: 0.85rem; margin-bottom: 20px;">
+        ⚠️ <strong>หมายเหตุ:</strong> การตอบกลับผลการพิจารณาและเอกสารจากเจ้าหน้าที่ จะตอบกลับโดยตรงในอีเมลฉบับเดิม (Reply Thread) ท่านสามารถตรวจสอบได้ในกล่องจดหมายของท่านหรือเช็คสถานะผ่านเว็บได้ตลอดเวลา
+      </p>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="document.getElementById('modal-success').classList.remove('active')">ตกลง / ปิดหน้าต่าง</button>
+    </div>
+  </div>
+
+  <!-- MODAL 3: AI REVIEW ANALYSIS -->
+  <div id="modal-ai-review" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="ai-review-title">🤖 AI ตรวจแบบแปลนและวิเคราะห์คำร้องอัตโนมัติ</h3>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div id="ai-review-content"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: AI AUTOFILL & THREADED REPLY -->
+  <div id="modal-ai-autofill" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="ai-autofill-title">✍️ ร่างคำตอบกลับทางการและส่งอีเมล (Threading Reply)</h3>
+        <button class="close-btn">&times;</button>
+      </div>
+      
+      <form id="form-send-reply" style="display:flex; flex-direction:column; gap:15px;">
+        <input type="hidden" id="reply-req-id">
+        
+        <div class="form-grid">
+          <div>
+            <label for="reply-status-select">🎯 ผลการพิจารณา / อัปเดตสถานะ *</label>
+            <select id="reply-status-select" style="font-weight:bold; color:#fbbf24;" required>
+              <option value="อนุมัติ">✅ อนุมัติ (Approved / จัดส่งแบบแปลนตามร้องขอ)</option>
+              <option value="ขอแก้ไขรายละเอียด">⚠️ ขอแก้ไขรายละเอียด (Revision Required - ต้องแก้ไขบางจุด)</option>
+              <option value="ปฏิเสธ">❌ ปฏิเสธ (Rejected / ไม่อนุมัติคำร้อง)</option>
+            </select>
+          </div>
+          <div>
+            <label for="reply-admin-notes">📝 ความเห็นผู้ดูแลระบบ / ข้อสั่งการ</label>
+            <input type="text" id="reply-admin-notes" placeholder="เช่น อนุมัติให้ดำเนินการได้ตามวัตถุประสงค์">
+          </div>
+        </div>
+
+        <div>
+          <label for="reply-eng-notes">🧑‍🔧 ข้อแนะนำทางเทคนิคจากวิศวกรผู้ตรวจสอบ</label>
+          <input type="text" id="reply-eng-notes" placeholder="เช่น ต้องปฏิบัติตามกฎกระทรวง 2566 และข้อกำหนดความปลอดภัยของอาคาร">
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+          <label>📜 ร่างข้อความอีเมลตอบกลับทางการ (สามารถแก้ไขเพิ่มเติมได้)</label>
+          <button type="button" id="btn-generate-ai-reply" class="btn btn-accent" style="padding: 6px 16px; font-size: 0.85rem;">
+            🚀 ให้ AI Gemini ร่างข้อความตอบกลับตามผลด้านบน
+          </button>
+        </div>
+
+        <!-- Rich Editor Area -->
+        <div id="reply-editor-area" contenteditable="true" style="background: rgba(20,20,20,0.9); border: 1px solid rgba(245,158,11,0.4); border-radius:10px; padding: 1.5rem; min-height: 200px; color:#ffffff; font-size:0.95rem; line-height:1.6; outline:none;">
+        </div>
+
+        <div style="background: rgba(245,158,11,0.08); padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); border: 1px solid rgba(245,158,11,0.2);">
+          ℹ️ <strong>ระบบ Email Threading:</strong> เมื่อกดส่ง อีเมลฉบับนี้จะถูกส่งไปต่อท้ายกระทู้เดิม (Reply Thread) โดยอัตโนมัติด้วย Gmail API เพื่อไม่ให้ผู้รับบริการสับสน
+        </div>
+
+        <div style="text-align: right; margin-top: 10px;">
+          <button type="button" class="btn btn-secondary close-btn" style="margin-right: 10px;">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem;">
+            📨 ยืนยันบันทึกผลและส่งอีเมลตอบกลับ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

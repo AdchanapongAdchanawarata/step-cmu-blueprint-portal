@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: step-blueprint-portal-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.18.0
+      - key: PORT
+        value: 8000

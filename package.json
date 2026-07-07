@@ -1,0 +1,26 @@
+{
+  "name": "step-blueprint-portal",
+  "version": "1.0.0",
+  "description": "STeP CMU Blueprint Portal (100% Free Architecture with Render.com & Firebase Hosting)",
+  "main": "functions/index.js",
+  "scripts": {
+    "start": "node functions/index.js",
+    "dev": "node functions/index.js",
+    "build": "echo 'No build required for Node.js Express'",
+    "deploy:hosting": "firebase deploy --only hosting"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^4.5.0",
+    "googleapis": "^133.0.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "author": "STeP CMU Team & Antigravity AI",
+  "license": "ISC",
+  "private": true
+}
