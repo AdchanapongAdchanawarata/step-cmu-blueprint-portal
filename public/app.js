@@ -1423,7 +1423,7 @@ function openAnalyticsModal() {
         <!-- ADMIN LEADERBOARD -->
         <div style="background: rgba(30, 41, 59, 0.6); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
           <h4 style="color: #f8fafc; font-size: 1.1rem; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px;">
-            <span>🏆</span> สถิติผู้ดูแลระบบที่ทำงานมากที่สุด (Admin Performance)
+            <span>🏆</span> สถิติผู้ดูแลระบบ (Admin Performance)
           </h4>
           ${sortedAdmins.length === 0 ? `<p style="color: #94a3b8; text-align: center; padding: 15px;">ยังไม่มีข้อมูลการตอบกลับจากผู้ดูแลระบบ</p>` : `
           <div style="display: flex; flex-direction: column; gap: 12px;">
