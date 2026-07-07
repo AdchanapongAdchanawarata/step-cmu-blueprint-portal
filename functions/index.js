@@ -328,27 +328,84 @@ ${dynamicKbText}
 });
 
 /**
+ * Admin Directory - Get STeP CMU organization and admin contact list
+ */
+app.get('/api/admin/directory', requireAdmin, (req, res) => {
+  const { config } = require('./google_services');
+  res.json({
+    success: true,
+    orgName: config.ORG_NAME || "อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)",
+    directory: config.ADMIN_DIRECTORY || []
+  });
+});
+
+/**
+ * AI Chat - Interactive Q&A between Admin and Gemini regarding a blueprint
+ */
+app.post('/api/admin/ai-chat', requireAdmin, async (req, res) => {
+  try {
+    const { code, buildingType, organization, fileLink, history, message } = req.body;
+    if (!message) return res.status(400).json({ success: false, error: "กรุณาระบุคำถาม" });
+
+    const kbList = await getKnowledgeList();
+    const dynamicKbText = kbList.map(k => `- [${k.category}] ${k.fileName}: ${k.summary}`).join('\n');
+    const { config } = require('./google_services');
+
+    const systemInstruction = `คุณคือ AI ที่ปรึกษาวิศวกรรมและผู้เชี่ยวชาญด้านกฎหมายอาคารประจำ ${config.ORG_NAME || 'STeP CMU'}
+คุณกำลังสนทนาให้คำปรึกษาแก่เจ้าหน้าที่วิศวกร/แอดมิน เพื่อร่วมตรวจสอบแบบแปลนคำร้องรหัส ${code} (งาน: ${buildingType}, หน่วยงาน: ${organization})
+ข้อกฎหมายและมาตรฐานในฐานความรู้:
+${JSON.stringify(defaultKB.regulations, null, 2)}
+เอกสารเพิ่มเติมใน Drive:
+${dynamicKbText}
+
+*** คำสั่งสำคัญที่สุด ***
+1. คุณได้รับไฟล์แนบภาพแปลนหรือ PDF (Multimodal) ในระบบแล้ว ใช้วิเคราะห์ตอบคำถามของวิศวกรได้อย่างแม่นยำลึกซึ้ง!
+2. ตอบคำถามให้ตรงประเด็น อ้างอิงข้อกฎหมาย ตัวเลข และมาตรฐานความปลอดภัยอย่างมืออาชีพ กระชับ และสุภาพ`;
+
+    let chatPrompt = `คำถามจากวิศวกรผู้ตรวจ: "${message}"`;
+    if (history && history.length > 0) {
+      const historyText = history.map(h => `${h.role === 'user' ? 'วิศวกร' : 'AI'}: ${h.text}`).join('\n\n');
+      chatPrompt = `ประวัติการสนทนาที่ผ่านมา:\n${historyText}\n\nคำถามล่าสุดจากวิศวกรผู้ตรวจ: "${message}"\n\nกรุณาตอบคำถามล่าสุดโดยอ้างอิงข้อมูลแปลนและประวัติการคุยด้านบน:`;
+    }
+
+    console.log(`💬 [AI Chat] Admin ${req.adminEmail} asking about ${code}: "${message}"`);
+    const fileAttachment = await getFileForGemini(fileLink);
+    const aiReply = await callGemini(chatPrompt, systemInstruction, fileAttachment);
+
+    res.json({ success: true, reply: aiReply });
+  } catch (err) {
+    console.error("AI Chat Error:", err);
+    res.status(500).json({ success: false, error: "AI Chat เกิดข้อผิดพลาด: " + err.message });
+  }
+});
+
+/**
  * AI Autofill - Generate official Thai reply email draft based on decision
  */
 app.post('/api/admin/ai-autofill', requireAdmin, async (req, res) => {
   try {
-    const { code, applicantName, buildingType, decision, adminNotes, engineerNotes } = req.body;
+    const { code, applicantName, buildingType, decision, adminNotes, engineerNotes, consultSummary, contactPerson } = req.body;
+    const { config } = require('./google_services');
 
-    const systemInstruction = `คุณคือผู้ช่วยร่างจดหมายและอีเมลทางการของศูนย์นวัตกรรมและการจัดการพื้นที่ (STeP CMU)
+    const systemInstruction = `คุณคือผู้ช่วยร่างจดหมายและอีเมลทางการของ ${config.ORG_NAME || 'อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)'}
 คุณมีหน้าที่ร่างข้อความอีเมลตอบกลับผู้ยื่นคำร้องด้วยภาษาไทยที่เป็นทางการ สุภาพ ชัดเจน และเป็นมืออาชีพ`;
 
     const prompt = `กรุณาร่างข้อความตอบกลับผลการตรวจสอบแบบแปลน (เพื่อใส่ในอีเมล) โดยมีข้อมูลดังนี้:
 - รหัสคำร้อง: ${code}
 - ชื่อผู้ยื่น: ${applicantName}
+- หน่วยงานรับผิดชอบ: ${config.ORG_NAME || 'STeP CMU'}
 - ประเภทงาน: ${buildingType}
 - ผลการพิจารณา (Decision): **${decision}** (อนุมัติ / ขอแก้ไขรายละเอียด / ปฏิเสธ)
-- ความเห็นจากผู้ดูแลระบบ/วิศวกร: ${adminNotes || ''} ${engineerNotes || ''}
+- ความเห็นจากผู้ดูแลระบบ/ข้อแนะนำทางเทคนิค: ${adminNotes || ''} ${engineerNotes || ''}
+- ข้อสรุปการวิเคราะห์ร่วมกับ AI (Consultation Summary): ${consultSummary || 'ไม่มี'}
+- ผู้ลงนาม/ผู้ติดต่อสอบถามเพิ่มเติม: ${contactPerson || 'ทีมวิศวกร STeP CMU'}
 - ข้อกฎหมายอ้างอิง: อ้างอิงตามพระราชบัญญัติควบคุมอาคาร และกฎกระทรวงกำหนดวัสดุ/ฐานราก/โครงสร้างอาคาร พ.ศ. 2566
 
 โครงสร้างข้อความที่ต้องการ (จัดย่อหน้าให้สวยงาม ไม่ต้องใส่คำขึ้นต้น "เรียน..." หรือคำลงท้าย เพราะระบบอีเมลมีให้อยู่แล้ว):
-1. แจ้งผลการพิจารณาอย่างชัดเจน
+1. แจ้งผลการพิจารณาอย่างชัดเจนในนาม ${config.ORG_NAME || 'STeP CMU'}
 2. อธิบายเหตุผลหรือรายละเอียดทางเทคนิค (ถ้าเป็น "อนุมัติ" ให้แจ้งขั้นตอนต่อไปเช่น เริ่มงานได้ภายใต้การกำกับดูแล, ถ้าเป็น "ขอแก้ไข" ให้ระบุจุดที่ต้องแก้ไขและเอกสารที่ต้องส่งเพิ่ม)
-3. คำแนะนำด้านความปลอดภัยและมาตรฐาน STeP CMU`;
+3. คำแนะนำด้านความปลอดภัยและมาตรฐานอาคาร
+4. ระบุข้อมูลผู้ติดต่อสอบถามเพิ่มเติมด้านล่างสุดของเนื้อความ (ตามชื่อและเบอร์โทรในหัวข้อผู้ลงนามด้านบน เพื่อให้ผู้ยื่นคำร้องติดต่อได้สะดวก)`;
 
     console.log(`🤖 [AI Autofill] Drafting reply for ${code} (${decision})...`);
     const draftText = await callGemini(prompt, systemInstruction);

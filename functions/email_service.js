@@ -159,7 +159,7 @@ async function sendThreadedReply(toEmail, applicantName, reqId, replyTextHtml, t
  */
 async function sendAdminMagicLink(toEmail, token, baseUrl) {
   try {
-    const magicLink = `${baseUrl || 'http://localhost:8000'}/admin.html?token=${token}`;
+    const magicLink = `${baseUrl || 'http://localhost:8000'}/?token=${token}`;
     const subject = `[STeP CMU Portal] 🔒 ลิงก์เข้าสู่ระบบหลังบ้านสำหรับเจ้าหน้าที่ (Magic Link)`;
     const htmlBody = `
       <div style="font-family: 'Sarabun', 'Prompt', Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 25px; border: 1px solid #27272a; border-radius: 12px; background: linear-gradient(to bottom, #0a0a0a, #18181b); color: #ffffff;">

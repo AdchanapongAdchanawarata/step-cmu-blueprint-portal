@@ -12,11 +12,11 @@ let selectedRequestForAI = null;
 let currentKBList = [];
 
 // Initialize on Load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupNavigation();
   setupFormTabs();
   setupEventListeners();
-  checkMagicLinkToken();
+  await checkMagicLinkToken(); // Must await so token is stored before checking login state
   checkLoginState();
 
   // Handle URL hash or param for admin access (from admin.html or #admin)
@@ -600,10 +600,13 @@ function renderAdminTable(requests) {
           ${r.respondedBy ? `<br><span style="font-size:0.75rem; color:#f59e0b; display:inline-block; margin-top:4px;">👤 ${r.respondedBy}</span>` : ''}
         </td>
         <td>
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn-primary" style="padding: 6px 12px; font-size:0.8rem;" onclick="openAIReviewModal('${r.requestID}')">🤖 AI ตรวจแบบ</button>
-            <button class="btn btn-accent" style="padding: 6px 12px; font-size:0.8rem;" onclick="openAIAutofillModal('${r.requestID}')">✍️ ร่างคำตอบกลับ</button>
-          </div>
+          <button class="btn btn-accent" style="padding: 8px 16px; font-size:0.85rem; display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="openAIStudioModal('${r.requestID}')">
+            <span style="font-size: 1.1rem;">🚀</span>
+            <div style="text-align: left; line-height: 1.2;">
+              <strong style="display: block; font-size: 0.85rem; color: #fff;">AI Blueprint Studio</strong>
+              <span style="font-size: 0.7rem; color: #fef3c7;">ตรวจแปลน & ร่างคำตอบ (ซ้าย-ขวา)</span>
+            </div>
+          </button>
         </td>
       </tr>
     `;
@@ -611,22 +614,105 @@ function renderAdminTable(requests) {
 }
 
 /**
- * 5. AI Review Modal
+ * 5. AI Blueprint Studio & Official Reply Crafter (Split-Screen)
  */
-async function openAIReviewModal(reqId) {
+let studioChatHistory = [];
+let adminDirectoryList = [];
+let loggedInContact = null; // Auto-detected from login email
+
+async function fetchAdminDirectory() {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/directory`, { headers: getAuthHeaders() });
+    const data = await res.json();
+    if (data.success && data.directory) {
+      adminDirectoryList = data.directory;
+    }
+  } catch (err) {
+    console.error("Error loading admin directory:", err);
+  }
+}
+
+function resolveLoggedInContact() {
+  const loginEmail = (localStorage.getItem('admin_email') || '').toLowerCase().trim();
+  if (!loginEmail || adminDirectoryList.length === 0) return null;
+  return adminDirectoryList.find(d => d.email.toLowerCase().trim() === loginEmail) || null;
+}
+
+function setupContactDisplay() {
+  const select = document.getElementById('studio-contact-select');
+  const label = document.getElementById('studio-contact-label');
+  if (!select) return;
+
+  loggedInContact = resolveLoggedInContact();
+
+  if (loggedInContact) {
+    // Auto-lock to logged-in person
+    const contactValue = `${loggedInContact.name} (${loggedInContact.role}) ${loggedInContact.phone && loggedInContact.phone !== '-' ? '- โทร: ' + loggedInContact.phone : ''} [อีเมล: ${loggedInContact.email}]`;
+    select.innerHTML = `<option value="${contactValue}" selected>${loggedInContact.name} - ${loggedInContact.role} ${loggedInContact.phone && loggedInContact.phone !== '-' ? '(' + loggedInContact.phone + ')' : ''}</option>`;
+    select.disabled = true;
+    select.style.opacity = '1';
+    select.style.cursor = 'default';
+    if (label) label.innerHTML = `🔒 ผู้ลงนาม (ตาม Login: <strong style="color: #38bdf8;">${loggedInContact.email}</strong>)`;
+  } else {
+    // Fallback: show logged-in email directly
+    const fallbackEmail = localStorage.getItem('admin_email') || 'ทีมวิศวกร STeP CMU';
+    const contactValue = `ทีมวิศวกร STeP CMU [อีเมล: ${fallbackEmail}]`;
+    select.innerHTML = `<option value="${contactValue}" selected>📧 ${fallbackEmail} (ทีมวิศวกร STeP CMU)</option>`;
+    select.disabled = true;
+    select.style.opacity = '1';
+    select.style.cursor = 'default';
+    if (label) label.innerHTML = `🔒 ผู้ลงนาม (ตาม Login: <strong style="color: #f59e0b;">${fallbackEmail}</strong>)`;
+  }
+}
+
+async function openAIStudioModal(reqId) {
   const req = currentRequests.find(r => r.requestID === reqId);
   if (!req) return;
   selectedRequestForAI = req;
+  studioChatHistory = [];
 
-  const modal = document.getElementById('modal-ai-review');
-  const title = document.getElementById('ai-review-title');
-  const contentBox = document.getElementById('ai-review-content');
+  // Ensure directory is loaded
+  if (adminDirectoryList.length === 0) {
+    await fetchAdminDirectory();
+  }
 
-  title.innerHTML = `🤖 AI ตรวจแบบแปลนและวิเคราะห์คำร้อง (รหัส: ${req.requestID})`;
-  contentBox.innerHTML = `<div style="text-align:center; padding: 3rem;"><div class="spinner" style="width:36px; height:36px;"></div><p style="margin-top:15px; color:#fbbf24; font-size:1.1rem;">Gemini 2.5 Flash กำลังวิเคราะห์ข้อมูลเทียบกับกฎกระทรวงและข้อกำหนด...</p><p style="color:var(--text-muted); font-size:0.85rem;">การคำนวณด้านวัสดุ ฐานราก โครงสร้าง และความเหมาะสมตามวัตถุประสงค์</p></div>`;
-  
+  const modal = document.getElementById('modal-ai-studio');
+  document.getElementById('studio-title').innerHTML = `🚀 AI Blueprint Studio & Official Reply Crafter (รหัสคำร้อง: ${req.requestID} - ${req.applicantName})`;
+
+  // Left Pane: Blueprint Top Attachment
+  const bpName = document.getElementById('studio-blueprint-name');
+  const bpLink = document.getElementById('studio-blueprint-link');
+  if (req.fileLink) {
+    bpName.innerHTML = `📄 <a href="${req.fileLink}" target="_blank" style="color: #38bdf8; text-decoration: underline;">ไฟล์แปลน/เอกสารแนบของโครงการ (คลิกเพื่อดู)</a>`;
+    bpLink.href = req.fileLink;
+    bpLink.style.display = 'inline-flex';
+  } else {
+    bpName.innerHTML = `<span style="color: #f87171;">❌ ไม่ได้แนบไฟล์แปลน</span>`;
+    bpLink.style.display = 'none';
+  }
+
+  // Left Pane: AI Review Box
+  const reviewBox = document.getElementById('studio-ai-review-box');
+  reviewBox.innerHTML = `<div style="text-align:center; padding: 2rem;"><div class="spinner" style="width:30px; height:30px; margin: 0 auto;"></div><p style="margin-top:10px; color:#fbbf24;">AI กำลังตรวจสอบภาพแปลนและคำนวณข้อกำหนดโครงสร้าง...</p></div>`;
+
+  // Left Pane: Chat Feed
+  const chatFeed = document.getElementById('studio-chat-feed');
+  chatFeed.innerHTML = `<div style="background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; color: #bae6fd;">💡 <strong>ระบบผู้ช่วยอัจฉริยะ:</strong> ท่านสามารถพิมพ์คำถามสอบถามรายละเอียดเชิงลึกของแปลนนี้ได้ครับ เช่น *"ระยะยื่นระเบียงผ่านเกณฑ์มั้ย?"* หรือ *"ค่าการรับน้ำหนักพื้นตามกฎกระทรวงคือเท่าไร?"*</div>`;
+  document.getElementById('studio-chat-input').value = '';
+
+  // Right Pane: Form setup
+  document.getElementById('studio-reply-req-id').value = req.requestID;
+  document.getElementById('studio-status-select').value = req.status === 'รอดำเนินการ' ? 'อนุมัติ' : req.status;
+  document.getElementById('studio-admin-notes').value = req.adminNotes || '';
+  document.getElementById('studio-eng-notes').value = req.engineerNotes || '';
+  document.getElementById('studio-reply-editor-area').innerHTML = `<p style="color: #64748b; text-align: center; padding-top: 3rem;">👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br><strong style="color: #f59e0b;">"➡️ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลด้านขวา"</strong><br> เพื่อให้ AI ร่างข้อความอีเมลตอบกลับทางการให้อัตโนมัติในช่องนี้</p>`;
+
+  // Right Pane: Auto-lock contact person to logged-in admin
+  setupContactDisplay();
+
   modal.classList.add('active');
 
+  // Trigger AI Review automatically
   try {
     const res = await fetch(`${API_BASE}/api/admin/ai-review`, {
       method: 'POST',
@@ -640,83 +726,116 @@ async function openAIReviewModal(reqId) {
       })
     });
     const data = await res.json();
-
     if (data.success) {
       const formatted = formatMarkdownToHtml(data.analysis);
-      contentBox.innerHTML = `
-        <div style="margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center;">
-          <span class="badge badge-approved" style="font-size:0.85rem;">✔ ตรวจสอบอ้างอิง พ.ร.บ. อาคาร และกฎกระทรวง 2566</span>
-          <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem;" onclick="copyAIReviewText()">📋 คัดลอกผลตรวจ</button>
-        </div>
-        <div class="ai-box" id="ai-review-text">${formatted}</div>
-        <div style="text-align:right; margin-top:1rem;">
-          <button class="btn btn-accent" onclick="transferReviewToAutofill('${req.requestID}')">➡️ นำผลตรวจไปร่างอีเมลตอบกลับ</button>
-        </div>
-      `;
+      reviewBox.innerHTML = `<div id="studio-review-text" style="color: #e2e8f0;">${formatted}</div>`;
     } else {
-      let errHtml = `<p style="color:#f87171; text-align:center; padding:2rem;">❌ เกิดข้อผิดพลาด: ${data.error}</p>`;
+      let errHtml = `<p style="color:#f87171; text-align:center; padding:1rem;">❌ เกิดข้อผิดพลาด: ${data.error}</p>`;
       if (data.error && (data.error.includes("โควต้า") || data.error.includes("429") || data.error.includes("EXHAUSTED") || data.error.includes("limit"))) {
-        errHtml = `<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 1rem;">
-          <h4 style="color: #f87171; font-size: 1.2rem; margin-bottom: 10px;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) หมดชั่วคราว</h4>
-          <p style="color: #ffffff; line-height: 1.6; margin-bottom: 10px;">โควต้าการประมวลผลฟรีต่อวัน/ต่อนาที ของ Gemini 2.5 Flash เต็มตามลิมิตแล้วครับ</p>
-          <div style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; margin: 10px 0; text-align: left;">
-            <strong style="color: #fbbf24;">🕒 เวลาที่สามารถใช้งานได้อีกครั้ง:</strong><br>
-            <span style="color: #34d399; font-size: 0.9rem;">• หากติดลิมิตต่อนาที: รอประมาณ 1-2 นาทีแล้วกดใหม่ได้ทันที<br>• หากติดลิมิตรายวัน: ระบบจะรีเซ็ตโควต้าเวลา <b>14:00 น.</b> ของทุกวัน (เที่ยงคืนเวลาแปซิฟิก)</span>
-          </div>
-          <p style="color: #f59e0b; font-size: 0.9rem; font-weight: 600; margin-top: 10px;">🚫 ห้ามเปิดใช้งานระบบ AI แบบเสียเงิน (Paid Tier) โดยเด็ดขาด ตามนโยบายและข้อสั่งการของผู้บริหาร</p>
+        errHtml = `<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 1rem; border-radius: 8px; text-align: center;">
+          <strong style="color: #f87171;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) เต็มชั่วคราว</strong><br>
+          <span style="color: #34d399; font-size: 0.85rem;">รอประมาณ 1-2 นาที หรือรอรีเซ็ต 14:00 น. ครับ (ห้ามเปิดใช้ระบบเสียเงินตามข้อสั่งการผู้บริหาร)</span>
         </div>`;
       }
-      contentBox.innerHTML = errHtml;
+      reviewBox.innerHTML = errHtml;
     }
   } catch (err) {
-    contentBox.innerHTML = `<p style="color:#f87171; text-align:center; padding:2rem;">ไม่สามารถเชื่อมต่อระบบ AI ได้ในขณะนี้</p>`;
+    reviewBox.innerHTML = `<p style="color:#f87171; text-align:center;">ไม่สามารถเชื่อมต่อระบบ AI ได้ในขณะนี้</p>`;
   }
 }
 
-function transferReviewToAutofill(reqId) {
-  document.getElementById('modal-ai-review').classList.remove('active');
-  openAIAutofillModal(reqId);
+function closeAIStudioModal() {
+  const modal = document.getElementById('modal-ai-studio');
+  if (modal) modal.classList.remove('active');
 }
 
-function copyAIReviewText() {
-  const box = document.getElementById('ai-review-text');
+// Aliases for compatibility
+function openAIReviewModal(reqId) { openAIStudioModal(reqId); }
+function openAIAutofillModal(reqId) { openAIStudioModal(reqId); }
+
+function copyStudioAIReview() {
+  const box = document.getElementById('studio-review-text') || document.getElementById('studio-ai-review-box');
   if (box) {
     navigator.clipboard.writeText(box.innerText);
     showNotification("📋 คัดลอกผลตรวจของ AI เรียบร้อยแล้ว", "success");
   }
 }
 
-/**
- * 6. AI Autofill Modal & Threaded Reply
- */
-function openAIAutofillModal(reqId) {
-  const req = currentRequests.find(r => r.requestID === reqId);
-  if (!req) return;
-  selectedRequestForAI = req;
+async function sendStudioChatMessage() {
+  if (!selectedRequestForAI) return;
+  const input = document.getElementById('studio-chat-input');
+  const message = input.value.trim();
+  if (!message) return;
 
-  const modal = document.getElementById('modal-ai-autofill');
-  const title = document.getElementById('ai-autofill-title');
-  
-  title.innerHTML = `✍️ AI ร่างคำตอบกลับทางการ (รหัส: ${req.requestID} - ${req.applicantName})`;
-  
-  document.getElementById('reply-req-id').value = req.requestID;
-  document.getElementById('reply-status-select').value = req.status === 'รอดำเนินการ' ? 'อนุมัติ' : req.status;
-  document.getElementById('reply-admin-notes').value = req.adminNotes || '';
-  document.getElementById('reply-eng-notes').value = req.engineerNotes || '';
-  document.getElementById('reply-editor-area').innerHTML = `<p style="color:var(--text-dim); text-align:center; padding:2rem;">เลือกระบุผลการพิจารณาด้านบน แล้วคลิกปุ่ม "🚀 ให้ AI ร่างข้อความตอบกลับ" เพื่อสร้างร่างอีเมลทางการด้วยภาษาไทยที่สุภาพและเป็นมืออาชีพ</p>`;
-  
-  modal.classList.add('active');
+  const feed = document.getElementById('studio-chat-feed');
+  feed.innerHTML += `<div style="align-self: flex-end; background: #0284c7; color: #fff; padding: 8px 14px; border-radius: 12px 12px 2px 12px; max-width: 85%; font-size: 0.9rem; margin-top: 6px;"><strong>🧑‍🔧 วิศวกร:</strong> ${message}</div>`;
+  input.value = '';
+  feed.scrollTop = feed.scrollHeight;
+
+  const loadingId = 'chat-loading-' + Date.now();
+  feed.innerHTML += `<div id="${loadingId}" style="align-self: flex-start; background: rgba(30,41,59,0.8); color: #fbbf24; padding: 8px 14px; border-radius: 12px 12px 12px 2px; font-size: 0.85rem; margin-top: 6px; display: flex; align-items: center; gap: 8px;"><div class="spinner" style="width:16px; height:16px;"></div> AI กำลังตรวจสอบภาพแปลนและค้นหาคำตอบ...</div>`;
+  feed.scrollTop = feed.scrollHeight;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/ai-chat`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        code: selectedRequestForAI.requestID,
+        buildingType: selectedRequestForAI.buildingType,
+        organization: selectedRequestForAI.organization,
+        fileLink: selectedRequestForAI.fileLink,
+        history: studioChatHistory,
+        message: message
+      })
+    });
+    const data = await res.json();
+    const loadingElem = document.getElementById(loadingId);
+    if (loadingElem) loadingElem.remove();
+
+    if (data.success) {
+      studioChatHistory.push({ role: 'user', text: message });
+      studioChatHistory.push({ role: 'ai', text: data.reply });
+      const formattedReply = formatMarkdownToHtml(data.reply);
+      feed.innerHTML += `<div style="align-self: flex-start; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); color: #e2e8f0; padding: 10px 14px; border-radius: 12px 12px 12px 2px; max-width: 90%; font-size: 0.9rem; margin-top: 6px; line-height: 1.5;"><strong>🤖 AI ที่ปรึกษา:</strong> ${formattedReply}</div>`;
+    } else {
+      feed.innerHTML += `<div style="align-self: flex-start; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; margin-top: 6px;">❌ ไม่สามารถตอบคำถามได้: ${data.error}</div>`;
+    }
+    feed.scrollTop = feed.scrollHeight;
+  } catch (err) {
+    const loadingElem = document.getElementById(loadingId);
+    if (loadingElem) loadingElem.remove();
+    feed.innerHTML += `<div style="align-self: flex-start; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; margin-top: 6px;">❌ เกิดข้อผิดพลาดในการเชื่อมต่อ</div>`;
+    feed.scrollTop = feed.scrollHeight;
+  }
 }
 
-async function handleGenerateAIReply() {
+function transferStudioToReply() {
   if (!selectedRequestForAI) return;
+  const reviewBox = document.getElementById('studio-review-text') || document.getElementById('studio-ai-review-box');
+  const reviewText = reviewBox ? reviewBox.innerText : '';
+  
+  let chatSummary = '';
+  if (studioChatHistory.length > 0) {
+    chatSummary = studioChatHistory.map(h => `${h.role === 'user' ? 'ถาม' : 'AIตอบ'}: ${h.text}`).join(' | ');
+  }
 
-  const decision = document.getElementById('reply-status-select').value;
-  const adminNotes = document.getElementById('reply-admin-notes').value;
-  const engineerNotes = document.getElementById('reply-eng-notes').value;
-  const editorArea = document.getElementById('reply-editor-area');
+  const combinedSummary = `[ผลตรวจจาก AI] ${reviewText.substring(0, 400)}... ${chatSummary ? ' | [สรุปประเด็นคุยเพิ่มเติม] ' + chatSummary.substring(0, 300) : ''}`;
+  document.getElementById('studio-eng-notes').value = combinedSummary;
 
-  editorArea.innerHTML = `<div style="text-align:center; padding: 2rem;"><div class="spinner"></div><p style="margin-top:10px; color:#fbbf24;">AI กำลังเรียบเรียงภาษาและอ้างอิงข้อกำหนดให้เหมาะสมตามผล: <strong>${decision}</strong>...</p></div>`;
+  showNotification("➡️ ย้ายข้อสรุปการปรึกษา AI มายังช่องข้อแนะนำฝั่งขวาแล้ว กำลังสั่ง AI ร่างอีเมล...", "success");
+  handleStudioGenerateReply();
+}
+
+async function handleStudioGenerateReply() {
+  if (!selectedRequestForAI) return;
+  const decision = document.getElementById('studio-status-select').value;
+  const adminNotes = document.getElementById('studio-admin-notes').value;
+  const engineerNotes = document.getElementById('studio-eng-notes').value;
+  const contactPerson = document.getElementById('studio-contact-select').value;
+  const editorArea = document.getElementById('studio-reply-editor-area');
+
+  editorArea.innerHTML = `<div style="text-align:center; padding: 2rem;"><div class="spinner" style="width:30px; height:30px; margin: 0 auto;"></div><p style="margin-top:10px; color:#fbbf24;">AI กำลังเรียบเรียงภาษาในนาม STeP CMU ตามผล: <strong>${decision}</strong>...</p></div>`;
 
   try {
     const res = await fetch(`${API_BASE}/api/admin/ai-autofill`, {
@@ -726,13 +845,14 @@ async function handleGenerateAIReply() {
         code: selectedRequestForAI.requestID,
         applicantName: selectedRequestForAI.applicantName,
         buildingType: selectedRequestForAI.buildingType,
-        decision,
-        adminNotes,
-        engineerNotes
+        decision: decision,
+        adminNotes: adminNotes,
+        engineerNotes: engineerNotes,
+        consultSummary: engineerNotes,
+        contactPerson: contactPerson
       })
     });
     const data = await res.json();
-
     if (data.success) {
       editorArea.innerHTML = data.draftHtml;
     } else {
@@ -741,11 +861,6 @@ async function handleGenerateAIReply() {
         errHtml = `<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 1rem;">
           <h4 style="color: #f87171; font-size: 1.2rem; margin-bottom: 10px;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) หมดชั่วคราว</h4>
           <p style="color: #ffffff; line-height: 1.6; margin-bottom: 10px;">โควต้าการประมวลผลฟรีต่อวัน/ต่อนาที ของ Gemini 2.5 Flash เต็มตามลิมิตแล้วครับ</p>
-          <div style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; margin: 10px 0; text-align: left;">
-            <strong style="color: #fbbf24;">🕒 เวลาที่สามารถใช้งานได้อีกครั้ง:</strong><br>
-            <span style="color: #34d399; font-size: 0.9rem;">• หากติดลิมิตต่อนาที: รอประมาณ 1-2 นาทีแล้วกดใหม่ได้ทันที<br>• หากติดลิมิตรายวัน: ระบบจะรีเซ็ตโควต้าเวลา <b>14:00 น.</b> ของทุกวัน (เที่ยงคืนเวลาแปซิฟิก)</span>
-          </div>
-          <p style="color: #f59e0b; font-size: 0.9rem; font-weight: 600; margin-top: 10px;">🚫 ห้ามเปิดใช้งานระบบ AI แบบเสียเงิน (Paid Tier) โดยเด็ดขาด ตามนโยบายและข้อสั่งการของผู้บริหาร</p>
         </div>`;
       }
       editorArea.innerHTML = errHtml;
@@ -755,18 +870,18 @@ async function handleGenerateAIReply() {
   }
 }
 
-async function handleSendAdminReply(e) {
+async function handleStudioSubmitReply(e) {
   e.preventDefault();
   if (!selectedRequestForAI) return;
 
-  const code = document.getElementById('reply-req-id').value;
-  const status = document.getElementById('reply-status-select').value;
-  const adminNotes = document.getElementById('reply-admin-notes').value;
-  const engineerNotes = document.getElementById('reply-eng-notes').value;
-  const replyHtml = document.getElementById('reply-editor-area').innerHTML;
+  const code = document.getElementById('studio-reply-req-id').value;
+  const status = document.getElementById('studio-status-select').value;
+  const adminNotes = document.getElementById('studio-admin-notes').value;
+  const engineerNotes = document.getElementById('studio-eng-notes').value;
+  const replyHtml = document.getElementById('studio-reply-editor-area').innerHTML;
 
-  if (!replyHtml || replyHtml.includes("เลือกระบุผลการพิจารณา") || replyHtml.includes("AI กำลังเรียบเรียง")) {
-    showNotification("กรุณาร่างข้อความตอบกลับก่อนส่ง", "warning");
+  if (!replyHtml || replyHtml.includes("ตรวจสอบแปลนและพูดคุยกับ AI") || replyHtml.includes("AI กำลังเรียบเรียง")) {
+    showNotification("กรุณากดปุ่มย้ายข้อมูลหรือให้ AI ร่างข้อความตอบกลับก่อนส่งครับ", "warning");
     return;
   }
 
@@ -784,9 +899,9 @@ async function handleSendAdminReply(e) {
     hideLoadingModal();
 
     if (data.success) {
-      document.getElementById('modal-ai-autofill').classList.remove('active');
-      showNotification("📨 ส่งอีเมลตอบกลับ (Reply Thread) และบันทึกข้อมูลสำเร็จแล้ว!", "success");
-      loadAdminRequests(); // Refresh table
+      closeAIStudioModal();
+      showNotification("📨 ส่งอีเมลตอบกลับทางการในนาม STeP CMU สำเร็จแล้ว!", "success");
+      loadAdminRequests();
     } else {
       showNotification(data.error || "เกิดข้อผิดพลาดในการส่งอีเมล", "error");
     }

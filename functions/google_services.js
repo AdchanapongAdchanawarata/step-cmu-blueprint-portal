@@ -18,6 +18,15 @@ let config = {
     "amonlit@step.cmu.ac.th",
     "adchanapong@step.cmu.ac.th",
     "adchanawarata@gmail.com"
+  ],
+  ORG_NAME: "อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)",
+  ADMIN_DIRECTORY: [
+    { name: "นายอมรฤทธิ์ อินต๊ะ (A-monlit Inta)", role: "หัวหน้าทีม (Team Leader)", email: "amonlit@step.cmu.ac.th", phone: "080-1265622" },
+    { name: "นายกัมปนาท เปี้ยตั๋น (Kampanat Peatan)", role: "หัวหน้าทีม (Team Leader)", email: "kampanat@step.cmu.ac.th", phone: "-" },
+    { name: "นายวชิราวุฒิ จันปิน (Vachiravut Junpin)", role: "ผู้ช่วยหัวหน้าทีม (Assistant Team Leader)", email: "vachiravut@step.cmu.ac.th", phone: "-" },
+    { name: "นายปฏิพล อินสม (Patipol Insom)", role: "วิศวกร (Engineer)", email: "patipol@step.cmu.ac.th", phone: "088-4085242" },
+    { name: "นายจิระวัฒน์ เกษจรัล (Jirawat Keatjarun)", role: "วิศวกร (Engineer)", email: "jirawat@step.cmu.ac.th", phone: "091-8795998" },
+    { name: "นายอัจชนะพงษ์ อัจชนะวราทา (Adchanapong Adchanawarata)", role: "หัวหน้าทีม (Team Leader)", email: "adchanapong@step.cmu.ac.th", phone: "-" }
   ]
 };
 
