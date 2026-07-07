@@ -1336,8 +1336,36 @@ function openAnalyticsModal() {
 
   const sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
   const sortedAdmins = Object.entries(adminCounts).sort((a, b) => b[1] - a[1]);
-  const uniqueOrgs = new Set(currentRequests.map(r => r.organization).filter(o => o && o !== '-')).size;
-  const uniqueUsers = new Set(currentRequests.map(r => r.email)).size;
+  
+  const orgSet = new Set();
+  const orgEmails = new Set();
+  const independentUserSet = new Set();
+
+  currentRequests.forEach(r => {
+    const org = (r.organization || '').trim();
+    const isGeneric = !org || org === '-' || org === 'ไม่มี' || org === 'ไม่ระบุ' || org === 'บุคคลทั่วไป' || org === 'ประชาชน' || org === 'ประชาชนทั่วไป' || org === 'ฟรีแลนซ์' || org === 'ส่วนตัว' || org.toLowerCase() === 'n/a' || org.toLowerCase() === 'na';
+    
+    if (!isGeneric) {
+      orgSet.add(org);
+      if (r.email) orgEmails.add(r.email.toLowerCase().trim());
+    }
+  });
+
+  currentRequests.forEach(r => {
+    const org = (r.organization || '').trim();
+    const isGeneric = !org || org === '-' || org === 'ไม่มี' || org === 'ไม่ระบุ' || org === 'บุคคลทั่วไป' || org === 'ประชาชน' || org === 'ประชาชนทั่วไป' || org === 'ฟรีแลนซ์' || org === 'ส่วนตัว' || org.toLowerCase() === 'n/a' || org.toLowerCase() === 'na';
+    
+    if (isGeneric) {
+      const emailKey = (r.email || r.applicantName || 'unknown').toLowerCase().trim();
+      // ไม่นับซ้ำกัน: ถ้าอีเมลนี้ไม่เคยถูกนับในนามหน่วยงานมาก่อน จึงจะนับเป็นคนไม่สังกัดหน่วยงาน
+      if (!orgEmails.has(emailKey)) {
+        independentUserSet.add(emailKey);
+      }
+    }
+  });
+
+  const uniqueOrgsCount = orgSet.size;
+  const independentUsersCount = independentUserSet.size;
   const filesCount = currentRequests.filter(r => r.fileLink && r.fileLink.includes('http')).length;
 
   contentEl.innerHTML = `
@@ -1358,10 +1386,10 @@ function openAnalyticsModal() {
         <span style="color: #fbbf24; font-size: 1.8rem; font-weight: bold; display: block; line-height: 1.3; margin: 4px 0;">~18 นาที</span>
         <span style="color: #fef08a; font-size: 0.75rem; display: block; margin-top: 5px;">⚡ ตอบกลับภายในวันเดียว 96%</span>
       </div>
-      <div style="background: rgba(139, 92, 246, 0.15); padding: 18px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center;">
-        <span style="color: #ddd6fe; font-size: 0.85rem; display: block; margin-bottom: 5px;">👥 ผู้ใช้และองค์กร</span>
-        <span style="color: #a78bfa; font-size: 2.2rem; font-weight: bold;">${uniqueUsers} / ${uniqueOrgs}</span>
-        <span style="color: #ede9fe; font-size: 0.8rem; display: block; margin-top: 5px;">คนเข้าใช้งาน / หน่วยงาน</span>
+      <div style="background: rgba(139, 92, 246, 0.15); padding: 18px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center;" title="🏢 หน่วยงาน: ${Array.from(orgSet).join(', ')} | 👤 บุคคลทั่วไป: ${independentUsersCount} คน">
+        <span style="color: #ddd6fe; font-size: 0.85rem; display: block; margin-bottom: 5px;">🏢 หน่วยงาน / 👤 บุคคลทั่วไป</span>
+        <span style="color: #a78bfa; font-size: 2.2rem; font-weight: bold;">${uniqueOrgsCount} <span style="font-size:1.4rem; color:#cbd5e1;">/</span> ${independentUsersCount}</span>
+        <span style="color: #ede9fe; font-size: 0.75rem; display: block; margin-top: 5px;">จำนวนหน่วยงาน / คนไม่สังกัดหน่วยงาน (แยกไม่ซ้ำ)</span>
       </div>
     </div>
 
