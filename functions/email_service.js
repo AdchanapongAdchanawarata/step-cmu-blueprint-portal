@@ -52,12 +52,12 @@ async function sendConfirmationEmail(toEmail, applicantName, reqId) {
     const htmlBody = `
       <div style="font-family: 'Sarabun', 'Prompt', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px; background-color: #ffffff;">
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #f59e0b;">
-          <h2 style="color: #d97706; margin: 0;">ศูนย์นวัตกรรมและการจัดการพื้นที่ (STeP CMU)</h2>
+          <h2 style="color: #d97706; margin: 0;">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)</h2>
           <p style="color: #64748b; font-size: 14px; margin: 5px 0 0;">ระบบบริการตรวจสอบและคัดลอกแบบแปลนอาคารสถานที่</p>
         </div>
         <div style="padding: 20px 0; color: #334155; line-height: 1.6;">
           <p>เรียน คุณ <strong>${applicantName}</strong>,</p>
-          <p>ทางศูนย์ฯ ได้รับเอกสารคำร้องของท่านเรียบร้อยแล้ว โดยมีรายละเอียดรหัสติดตามเรื่องดังนี้:</p>
+          <p>ทางอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU) ได้รับเอกสารคำร้องของท่านเรียบร้อยแล้ว โดยมีรายละเอียดรหัสติดตามเรื่องดังนี้:</p>
           <div style="background-color: #fffbeb; padding: 15px; border-left: 4px solid #f59e0b; border-radius: 4px; margin: 20px 0; text-align: center;">
             <span style="font-size: 14px; color: #78350f; display: block;">รหัสติดตามคำร้องของท่าน</span>
             <strong style="font-size: 24px; color: #d97706; letter-spacing: 1px;">${reqId}</strong>
@@ -113,7 +113,7 @@ async function sendThreadedReply(toEmail, applicantName, reqId, replyTextHtml, t
     const htmlBody = `
       <div style="font-family: 'Sarabun', 'Prompt', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px; background-color: #ffffff;">
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #f59e0b;">
-          <h2 style="color: #d97706; margin: 0;">ศูนย์นวัตกรรมและการจัดการพื้นที่ (STeP CMU)</h2>
+          <h2 style="color: #d97706; margin: 0;">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)</h2>
           <p style="color: #64748b; font-size: 14px; margin: 5px 0 0;">แจ้งผลการพิจารณาและรายละเอียดสำหรับคำร้อง <strong>${reqId}</strong></p>
         </div>
         <div style="padding: 20px 0; color: #334155; line-height: 1.6;">

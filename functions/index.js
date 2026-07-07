@@ -290,7 +290,7 @@ app.post('/api/admin/ai-review', requireAdmin, async (req, res) => {
     const kbList = await getKnowledgeList();
     const dynamicKbText = kbList.map(k => `- [${k.category}] ${k.fileName}: ${k.summary}`).join('\n');
 
-    const systemInstruction = `คุณคือ AI ผู้ช่วยวิศวกรและผู้ทรงคุณวุฒิในการตรวจสอบแบบแปลนอาคารสถานที่ประจำอุทยานวิทยาศาสตร์ฯ (STeP CMU)
+    const systemInstruction = `คุณคือ AI ผู้ช่วยวิศวกรและผู้ทรงคุณวุฒิในการตรวจสอบแบบแปลนอาคารสถานที่ประจำอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)
 คุณมีหน้าที่วิเคราะห์ข้อมูลคำร้อง และตรวจสอบแบบแปลน/เอกสารจริงในไฟล์แนบ (หากมี) โดยเทียบกับกฎหมายและมาตรฐานอาคารในฐานความรู้อย่างเข้มงวด:
 ${JSON.stringify(defaultKB.regulations, null, 2)}
 
