@@ -817,13 +817,13 @@ function transferStudioToReply() {
   
   let chatSummary = '';
   if (studioChatHistory.length > 0) {
-    chatSummary = studioChatHistory.map(h => `${h.role === 'user' ? 'ถาม' : 'AIตอบ'}: ${h.text}`).join(' | ');
+    chatSummary = studioChatHistory.map(h => `${h.role === 'user' ? 'ประเด็นสอบถาม' : 'ผลการตรวจสอบ'}: ${h.text}`).join(' | ');
   }
 
-  const combinedSummary = `[ผลตรวจจาก AI] ${reviewText.substring(0, 400)}... ${chatSummary ? ' | [สรุปประเด็นคุยเพิ่มเติม] ' + chatSummary.substring(0, 300) : ''}`;
+  const combinedSummary = `[ผลตรวจสอบทางวิศวกรรม] ${reviewText.substring(0, 400)}... ${chatSummary ? ' | [บันทึกการพิจารณาเพิ่มเติม] ' + chatSummary.substring(0, 300) : ''}`;
   document.getElementById('studio-eng-notes').value = combinedSummary;
 
-  showNotification("➡️ ย้ายข้อสรุปการปรึกษา AI มายังช่องข้อแนะนำฝั่งขวาแล้ว กำลังสั่ง AI ร่างอีเมล...", "success");
+  showNotification("➡️ ย้ายข้อสรุปการตรวจสอบมายังช่องข้อแนะนำฝั่งขวาแล้ว กำลังร่างอีเมลทางการ...", "success");
   handleStudioGenerateReply();
 }
 
