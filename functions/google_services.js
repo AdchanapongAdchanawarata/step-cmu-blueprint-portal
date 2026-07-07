@@ -272,6 +272,48 @@ async function verifyAdminEmail(email) {
   }
 }
 
+/**
+ * Download file from Google Drive as base64 for Gemini multimodal analysis
+ */
+async function getFileForGemini(fileLinkOrId) {
+  try {
+    if (!fileLinkOrId) return null;
+    let fileId = fileLinkOrId;
+    if (fileLinkOrId.includes('/d/')) {
+      fileId = fileLinkOrId.split('/d/')[1]?.split('/')[0];
+    }
+    if (!fileId || fileId === 'UNKNOWN_ID') return null;
+
+    console.log(`📥 Downloading file ${fileId} from Google Drive for Gemini Multimodal...`);
+    const metaRes = await drive.files.get({
+      fileId: fileId,
+      fields: 'name, mimeType, size'
+    });
+    const mimeType = metaRes.data.mimeType || 'application/pdf';
+    const size = parseInt(metaRes.data.size || '0', 10);
+
+    // Limit to 18 MB for inline Gemini processing
+    if (size > 18 * 1024 * 1024) {
+      console.warn(`⚠️ File ${fileId} is over 18MB (${size} bytes). Skipping inline attachment.`);
+      return null;
+    }
+
+    const res = await drive.files.get({
+      fileId: fileId,
+      alt: 'media'
+    }, { responseType: 'arraybuffer' });
+
+    const base64Data = Buffer.from(res.data).toString('base64');
+    return {
+      mimeType: mimeType,
+      data: base64Data
+    };
+  } catch (err) {
+    console.error("⚠️ Error downloading file for Gemini:", err.message);
+    return null;
+  }
+}
+
 module.exports = {
   getAllRequests,
   getRequestByCode,
@@ -281,5 +323,6 @@ module.exports = {
   getKnowledgeList,
   addKnowledgeRecord,
   verifyAdminEmail,
+  getFileForGemini,
   config
 };

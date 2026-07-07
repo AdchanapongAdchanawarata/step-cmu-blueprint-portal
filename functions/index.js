@@ -31,7 +31,8 @@ const {
   uploadToDrive,
   getKnowledgeList,
   addKnowledgeRecord,
-  verifyAdminEmail
+  verifyAdminEmail,
+  getFileForGemini
 } = require('./google_services');
 
 const {
@@ -49,6 +50,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 const JWT_SECRET = "STeP_CMU_SUPER_SECRET_KEY_2026_AI_PORTAL";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
+function detectMimeType(fileName) {
+  const lower = (fileName || '').toLowerCase();
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.png')) return 'image/png';
+  return 'application/pdf';
+}
+
 
 // Load default KB
 let defaultKB = {};
@@ -61,15 +69,26 @@ try {
 /**
  * Helper: Call Gemini 2.5 Flash via REST API
  */
-async function callGemini(prompt, systemInstruction = "") {
+async function callGemini(prompt, systemInstruction = "", fileAttachment = null) {
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     
+    const parts = [{ text: prompt }];
+    if (fileAttachment && fileAttachment.data && fileAttachment.mimeType) {
+      console.log(`🖼️ Attaching multimodal file (${fileAttachment.mimeType}) to Gemini prompt...`);
+      parts.push({
+        inlineData: {
+          mimeType: fileAttachment.mimeType,
+          data: fileAttachment.data
+        }
+      });
+    }
+
     const body = {
       contents: [
         {
           role: "user",
-          parts: [{ text: prompt }]
+          parts: parts
         }
       ]
     };
@@ -132,7 +151,7 @@ function requireAdmin(req, res, next) {
  */
 app.post('/api/request', async (req, res) => {
   try {
-    const { applicantName, email, phone, organization, buildingType, fileData, fileName } = req.body;
+    const { applicantName, email, phone, organization, buildingType, fileData, fileName, fileType } = req.body;
 
     if (!applicantName || !email || !buildingType) {
       return res.status(400).json({ success: false, error: "กรุณากรอกข้อมูลสำคัญให้ครบถ้วน" });
@@ -142,7 +161,8 @@ app.post('/api/request', async (req, res) => {
     let fileLink = "";
     if (fileData && fileName) {
       console.log(`📤 Uploading submission file for ${applicantName}...`);
-      fileLink = await uploadToDrive(fileData, fileName, 'application/pdf', false);
+      const mimeType = fileType || detectMimeType(fileName);
+      fileLink = await uploadToDrive(fileData, fileName, mimeType, false);
     }
 
     // 2. Pre-create record to get Request ID
@@ -271,12 +291,16 @@ app.post('/api/admin/ai-review', requireAdmin, async (req, res) => {
     const dynamicKbText = kbList.map(k => `- [${k.category}] ${k.fileName}: ${k.summary}`).join('\n');
 
     const systemInstruction = `คุณคือ AI ผู้ช่วยวิศวกรและผู้ทรงคุณวุฒิในการตรวจสอบแบบแปลนอาคารสถานที่ประจำอุทยานวิทยาศาสตร์ฯ (STeP CMU)
-คุณมีหน้าที่วิเคราะห์ข้อมูลคำร้องและแบบแปลน โดยเทียบกับกฎหมายและมาตรฐานอาคารในฐานความรู้อย่างเข้มงวด:
+คุณมีหน้าที่วิเคราะห์ข้อมูลคำร้อง และตรวจสอบแบบแปลน/เอกสารจริงในไฟล์แนบ (หากมี) โดยเทียบกับกฎหมายและมาตรฐานอาคารในฐานความรู้อย่างเข้มงวด:
 ${JSON.stringify(defaultKB.regulations, null, 2)}
 
 รายการเอกสารเพิ่มเติมใน Google Drive:
 ${dynamicKbText}
-`;
+
+*** คำสั่งสำคัญที่สุด (MUST FOLLOW) ***
+1. หากมีไฟล์แนบภาพแปลนหรือ PDF (Multimodal Attachment) ส่งมาด้วย ให้คุณตรวจสอบผังแปลน ระยะร่น สัดส่วน ความปลอดภัย และโครงสร้างในภาพอย่างละเอียดสุดความสามารถ!
+2. ห้ามตอบว่า "ไม่สามารถเปิดไฟล์ได้", "ไม่สามารถตรวจสอบรูปภาพหรือ PDF ได้", หรือ "ไม่สามารถเข้าถึงลิงก์ได้" โดยเด็ดขาด!
+3. หากเป็นกรณีไม่มีไฟล์แนบภาพมา ให้วิเคราะห์จาก "ประเภทงาน/อาคาร" และ "รายละเอียดคำร้อง" เทียบกับข้อกฎหมายใน Knowledge Base เพื่อสรุปความเสี่ยงและสร้าง "Checklist / จุดเน้นย้ำสำคัญ" ให้วิศวกรใช้เป็นแนวทางในการตรวจไฟล์แบบแปลนบน Google Drive`;
 
     const prompt = `กรุณาวิเคราะห์คำร้องขอตรวจสอบแบบแปลนรหัส: ${code}
 ประเภทงาน/อาคาร: ${buildingType}
@@ -293,7 +317,8 @@ ${dynamicKbText}
 3. **💡 ข้อแนะนำสำหรับวิศวกรผู้ตรวจ**: ประเด็นสำคัญที่เจ้าหน้าที่ควรเน้นย้ำหรือขอเอกสารคำนวณเพิ่มเติมก่อนอนุมัติ`;
 
     console.log(`🤖 [AI Review] Analyzing request ${code} for admin ${req.adminEmail}...`);
-    const aiAnalysis = await callGemini(prompt, systemInstruction);
+    const fileAttachment = await getFileForGemini(fileLink);
+    const aiAnalysis = await callGemini(prompt, systemInstruction, fileAttachment);
 
     res.json({ success: true, analysis: aiAnalysis });
   } catch (err) {
@@ -399,13 +424,14 @@ app.get('/api/admin/kb', requireAdmin, async (req, res) => {
  */
 app.post('/api/admin/kb', requireAdmin, async (req, res) => {
   try {
-    const { fileName, fileData, category, summary } = req.body;
+    const { fileName, fileData, fileType, category, summary } = req.body;
     if (!fileName || !fileData || !summary) {
       return res.status(400).json({ success: false, error: "กรุณาระบุชื่อไฟล์ ไฟล์เอกสาร และคำอธิบายสรุป" });
     }
 
     console.log(`📚 [KB Upload] Uploading new KB file ${fileName} by ${req.adminEmail}...`);
-    const fileLink = await uploadToDrive(fileData, fileName, 'application/pdf', true);
+    const mimeType = fileType || detectMimeType(fileName);
+    const fileLink = await uploadToDrive(fileData, fileName, mimeType, true);
     const fileId = fileLink.split('/d/')[1]?.split('/')[0] || "UNKNOWN_ID";
 
     await addKnowledgeRecord(fileId, fileName, fileLink, req.adminEmail, category || "ข้อกำหนดทั่วไป", summary);

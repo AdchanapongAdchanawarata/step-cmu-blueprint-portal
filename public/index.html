@@ -84,13 +84,13 @@
             </div>
             
             <div class="form-group full-width">
-              <label>📎 แนบไฟล์เอกสารแบบแปลน (PDF เท่านั้น) *</label>
+              <label>📎 แนบไฟล์เอกสารแบบแปลน (PDF, JPG, PNG) *</label>
               <div id="file-drop-zone" class="file-drop-zone">
                 <i>📑</i>
                 <h4 style="color:#ffffff; margin-bottom:6px;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</h4>
-                <p style="color:var(--text-muted); font-size:0.85rem;">รองรับไฟล์ .pdf ขนาดสูงสุด 20 MB</p>
+                <p style="color:var(--text-muted); font-size:0.85rem;">รองรับไฟล์ .pdf, .jpg, .png ขนาดสูงสุด 20 MB</p>
                 <div id="file-name-display" style="margin-top:12px; font-size:0.9rem; color:#fbbf24; font-weight:600;"></div>
-                <input type="file" id="file-blueprint" accept=".pdf" style="display:none;" required>
+                <input type="file" id="file-blueprint" accept=".pdf, .jpg, .jpeg, .png, image/jpeg, image/png, application/pdf" style="display:none;" required>
               </div>
             </div>
 
@@ -150,13 +150,13 @@
             </div>
             
             <div class="form-group full-width">
-              <label>📎 แนบไฟล์หนังสือขอความอนุเคราะห์ / เอกสารที่เกี่ยวข้อง (PDF - ไม่บังคับ)</label>
+              <label>📎 แนบไฟล์หนังสือขอความอนุเคราะห์ / เอกสารที่เกี่ยวข้อง (PDF, JPG, PNG - ไม่บังคับ)</label>
               <div id="copy-file-drop-zone" class="file-drop-zone">
                 <i>📑</i>
                 <h4 style="color:#ffffff; margin-bottom:6px;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่ (ถ้ามี)</h4>
-                <p style="color:var(--text-muted); font-size:0.85rem;">รองรับไฟล์ .pdf ขนาดสูงสุด 20 MB (เช่น หนังสือขอความอนุเคราะห์จากหน่วยงาน)</p>
+                <p style="color:var(--text-muted); font-size:0.85rem;">รองรับไฟล์ .pdf, .jpg, .png ขนาดสูงสุด 20 MB (เช่น หนังสือขอความอนุเคราะห์จากหน่วยงาน)</p>
                 <div id="copy-file-name-display" style="margin-top:12px; font-size:0.9rem; color:#fbbf24; font-weight:600;"></div>
-                <input type="file" id="file-copy-doc" accept=".pdf" style="display:none;">
+                <input type="file" id="file-copy-doc" accept=".pdf, .jpg, .jpeg, .png, image/jpeg, image/png, application/pdf" style="display:none;">
               </div>
             </div>
 
@@ -264,8 +264,8 @@
               <input type="text" id="kb-summary" placeholder="เช่น สรุปข้อกำหนดวัสดุทนไฟและระยะร่นแนวอาคาร 2566" required>
             </div>
             <div>
-              <label id="kb-file-label" class="btn btn-secondary" style="width:100%; cursor:pointer; text-align:center; justify-content:center;">📑 เลือกไฟล์ PDF กฎหมาย / คู่มือ</label>
-              <input type="file" id="kb-file-input" accept=".pdf" style="display:none;" required>
+              <label id="kb-file-label" class="btn btn-secondary" style="width:100%; cursor:pointer; text-align:center; justify-content:center;">📑 เลือกไฟล์เอกสาร (PDF, JPG, PNG)</label>
+              <input type="file" id="kb-file-input" accept=".pdf, .jpg, .jpeg, .png, image/jpeg, image/png, application/pdf" style="display:none;" required>
             </div>
             <div>
               <button type="submit" class="btn btn-primary" style="width:100%;">🚀 อัปโหลดเข้า KB</button>

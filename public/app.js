@@ -18,6 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   checkMagicLinkToken();
   checkLoginState();
+
+  // Handle URL hash or param for admin access (from admin.html or #admin)
+  if (window.location.hash === '#admin' || window.location.search.includes('admin') || window.location.pathname.includes('admin')) {
+    if (isLoggedIn()) {
+      switchView('view-admin-dashboard');
+    } else {
+      switchView('view-admin-login');
+    }
+  }
 });
 
 /**
@@ -313,7 +322,7 @@ async function handleCitizenSubmit(e) {
   const fileInput = document.getElementById('file-blueprint');
 
   if (!fileInput.files || fileInput.files.length === 0) {
-    showNotification("กรุณาแนบไฟล์แบบแปลน (PDF)", "error");
+    showNotification("กรุณาแนบไฟล์เอกสารแบบแปลน (PDF, JPG, PNG)", "error");
     return;
   }
 
@@ -334,7 +343,8 @@ async function handleCitizenSubmit(e) {
       body: JSON.stringify({
         applicantName, email, phone, organization, buildingType,
         fileData: base64Data,
-        fileName: file.name
+        fileName: file.name,
+        fileType: file.type
       })
     });
 
@@ -375,6 +385,7 @@ async function handleRequestCopySubmit(e) {
   try {
     let base64Data = null;
     let fileName = null;
+    let fileType = null;
     if (fileInput.files && fileInput.files.length > 0) {
       const file = fileInput.files[0];
       if (file.size > 20 * 1024 * 1024) {
@@ -384,6 +395,7 @@ async function handleRequestCopySubmit(e) {
       }
       base64Data = await readFileAsBase64(file);
       fileName = file.name;
+      fileType = file.type;
     }
 
     const buildingType = `[ขอเอกสารแบบแปลน] อาคาร: ${building}`;
@@ -395,7 +407,8 @@ async function handleRequestCopySubmit(e) {
       body: JSON.stringify({
         applicantName, email, phone, organization: fullOrg, buildingType,
         fileData: base64Data,
-        fileName: fileName
+        fileName: fileName,
+        fileType: fileType
       })
     });
 
@@ -871,6 +884,7 @@ async function handleUploadKB(e) {
       body: JSON.stringify({
         fileName: file.name,
         fileData: base64Data,
+        fileType: file.type,
         category,
         summary
       })
@@ -882,7 +896,7 @@ async function handleUploadKB(e) {
     if (data.success) {
       showNotification("📚 อัปโหลดและเพิ่มเอกสารเข้าสู่ระบบ AI Knowledge Base เรียบร้อยแล้ว!", "success");
       document.getElementById('form-upload-kb').reset();
-      document.getElementById('kb-file-label').textContent = "📑 เลือกไฟล์ PDF กฎหมาย / คู่มือ";
+      document.getElementById('kb-file-label').textContent = "📑 เลือกไฟล์เอกสาร (PDF, JPG, PNG)";
       loadKnowledgeBase();
     } else {
       showNotification(data.error || "ไม่สามารถอัปโหลดได้", "error");

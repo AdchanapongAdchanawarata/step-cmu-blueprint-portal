@@ -108,3 +108,36 @@
 3. **การแยกอีเมลรับผิดชอบงาน (Individual Email Tracking):** ระบบไม่ได้ส่งอีเมลตอบกลับจากอีเมลกลางเพียงอย่างเดียว แต่ใช้ระบบ Smart Header ทำให้การสื่อสารในแต่ละคำร้องถูกแยกไปตามอีเมลของ Admin ท่านที่รับผิดชอบงานนั้นๆ โดยตรง
 4. **ขนาดไฟล์ที่รองรับ:** ระบบรองรับการรับไฟล์แบบแปลนผ่านลิมิตของ Google Drive (แนะนำขนาดไฟล์ PDF ไม่เกิน 20 MB ต่อรายการเพื่อความรวดเร็วในการอัปโหลด)
 5. **การสำรองข้อมูล (Real-time Backup):** ข้อมูลคำร้องและสถานะทั้งหมดถูกบันทึกลง Google Sheets และไฟล์แนบอยู่ใน Google Drive ทันทีที่ยื่นเรื่อง จึงไม่มีความเสี่ยงเรื่องข้อมูลสูญหายจากตัวเซิร์ฟเวอร์เว็บไซต์ครับ
+
+---
+
+## 8. 🛠️ คู่มือการติดตั้งและเปิดใช้งานระบบบน Cloud ฟรี 100% (Deployment & Environment Guide)
+
+เพื่อให้ระบบทำงานร่วมกันระหว่างหน้าเว็บและเซิร์ฟเวอร์หลังบ้านโดยไม่เกิดข้อผิดพลาด และไม่มีค่าใช้จ่ายตลอดอายุการใช้งาน ให้ปฏิบัติตามขั้นตอนการตั้งค่าดังนี้:
+
+### 🚀 8.1 การนำโค้ดขึ้น GitHub และ Render.com (Backend Setup)
+1. **เตรียมไฟล์ขึ้น GitHub:** เลือกอัปโหลดเฉพาะโฟลเดอร์และไฟล์ที่จำเป็น ได้แก่ โฟลเดอร์ `functions`, โฟลเดอร์ `public`, และไฟล์ `package.json`, `render.yaml`, `firebase.json`, `google_assets_config.json`, `google_links.md` (ไม่ต้องอัปโหลดโฟลเดอร์ `node_modules` และไฟล์ `.env` ขึ้น GitHub เพื่อความปลอดภัย)
+2. **สร้าง Blueprint Service บน Render.com:**
+   - เข้าสู่ระบบ [Render.com](https://render.com) ด้วยบัญชี GitHub
+   - กดปุ่ม **"+ New" -> "Blueprint"** เลือก Repository ของโครงการ
+   - ระบบจะอ่านไฟล์ `render.yaml` และสร้างบริการ Web Service ชื่อ `step-blueprint-portal-backend` บนแพ็กเกจ **Free Tier (ฟรี 100%)** ให้อัตโนมัติ
+
+### 🔐 8.2 การตั้งค่ารหัสลับ Environment Variables (Secret Keys Setup)
+เนื่องจากไฟล์ `.env` ถูกตัดออกจากการอัปโหลดขึ้น GitHub เพื่อความปลอดภัยของรหัสลับ เซิร์ฟเวอร์บน Render.com จึงต้องตั้งค่ารหัสลับผ่านหน้าเว็บ Dashboard ดังนี้:
+1. เข้าไปที่เมนู **"Environment"** ของโปรเจกต์ `step-blueprint-portal-backend` บนเว็บ Render
+2. กดปุ่ม **"Edit"** ที่มุมขวาบนของกรอบ Environment Variables แล้วกดปุ่ม **"Add from .env"**
+3. ก๊อปปี้รหัสลับทั้ง 4 ตัวไปวางลงในช่องว่าง:
+```env
+CLIENT_ID=<YOUR_CLIENT_ID>
+CLIENT_SECRET=<YOUR_CLIENT_SECRET>
+REFRESH_TOKEN=<YOUR_REFRESH_TOKEN>
+GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
+```
+4. กดปุ่ม **"Save Changes"** เซิร์ฟเวอร์จะรีสตาร์ทตัวเองและพร้อมเชื่อมต่อกับ Google Sheets, Google Drive, Gmail และ AI Gemini ทันที
+
+### 🌐 8.3 การเชื่อมต่อกับหน้าเว็บ Firebase Hosting (Frontend Setup)
+1. ในไฟล์ `public/app.js` ได้กำหนดค่า URL ของ Render ไว้ที่ตัวแปร `RENDER_BACKEND_URL`:
+```javascript
+const RENDER_BACKEND_URL = 'https://step-blueprint-portal-backend.onrender.com';
+```
+2. เมื่อทำการ Deploy หน้าเว็บด้วยคำสั่ง `firebase deploy --only hosting` หน้าเว็บที่อยู่บน Firebase Hosting (`https://step-blueprint-portal-e2b08.web.app`) จะทำการเรียกใช้งาน API และ AI ผ่าน Render Backend URL นี้โดยอัตโนมัติ ทำให้ระบบทั้งสองฝั่งทำงานร่วมกันได้อย่างสมบูรณ์แบบครับ
