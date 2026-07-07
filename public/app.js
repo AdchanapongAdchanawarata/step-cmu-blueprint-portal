@@ -1155,12 +1155,37 @@ function viewReplyDetails(reqId) {
   const metaEl = document.getElementById('reply-details-meta');
   const bodyEl = document.getElementById('reply-details-body');
 
-  if (titleEl) titleEl.innerHTML = `👁️ รายละเอียดการตอบกลับคำร้อง: <strong style="color:#fbbf24;">${r.requestID}</strong>`;
+  if (titleEl) titleEl.innerHTML = `👁️ รายละเอียดข้อความอีเมลทางการที่ตอบกลับ: <strong style="color:#fbbf24;">${r.requestID}</strong>`;
   
   let statusColor = '#3b82f6';
-  if (r.status === 'อนุมัติ') statusColor = '#10b981';
-  if (r.status.includes('แก้ไข')) statusColor = '#f59e0b';
-  if (r.status === 'ปฏิเสธ') statusColor = '#ef4444';
+  let badgeText = 'ℹ️ แจ้งความคืบหน้าการพิจารณา';
+  let badgeBg = '#3b82f6';
+  let borderColor = '#3b82f6';
+  let titleColorHex = '#1e40af';
+  let boxBg = '#eff6ff';
+
+  if (r.status === 'อนุมัติ') {
+    statusColor = '#10b981';
+    badgeText = '✅ อนุมัติผ่านการตรวจสอบ (Approved)';
+    badgeBg = '#10b981';
+    borderColor = '#10b981';
+    titleColorHex = '#065f46';
+    boxBg = '#ecfdf5';
+  } else if (r.status.includes('แก้ไข')) {
+    statusColor = '#f59e0b';
+    badgeText = '⚠️ ขอแก้ไขรายละเอียด/เอกสารเพิ่มเติม (Revision Required)';
+    badgeBg = '#f59e0b';
+    borderColor = '#f59e0b';
+    titleColorHex = '#92400e';
+    boxBg = '#fffbeb';
+  } else if (r.status === 'ปฏิเสธ') {
+    statusColor = '#ef4444';
+    badgeText = '❌ ไม่ผ่านการอนุมัติ/ปฏิเสธคำร้อง (Rejected)';
+    badgeBg = '#ef4444';
+    borderColor = '#ef4444';
+    titleColorHex = '#991b1b';
+    boxBg = '#fef2f2';
+  }
 
   if (metaEl) {
     metaEl.innerHTML = `
@@ -1174,18 +1199,95 @@ function viewReplyDetails(reqId) {
   }
 
   if (bodyEl) {
-    if (r.replyDetails && r.replyDetails.trim() !== '') {
+    // If replyDetails already has full email wrapper, show it directly
+    if (r.replyDetails && r.replyDetails.includes('อุทยานวิทยาศาสตร์และเทคโนโลยี')) {
       bodyEl.innerHTML = r.replyDetails;
+      const modal = document.getElementById('modal-reply-details');
+      if (modal) modal.classList.add('active');
+      return;
+    }
+
+    // Otherwise, construct the complete, professional STeP CMU email letter!
+    let contentHtml = '';
+    if (r.replyDetails && r.replyDetails.trim() !== '') {
+      contentHtml = r.replyDetails;
     } else {
-      bodyEl.innerHTML = `
-        <div style="padding: 20px; background: #f8fafc; border-left: 4px solid ${statusColor}; border-radius: 6px;">
-          <p style="margin: 0 0 10px 0; color: #475569; font-weight: bold;">📋 หมายเหตุการพิจารณาจากระบบ:</p>
-          <p style="margin: 0; color: #1e293b; font-size: 1.05rem;">${r.adminNotes || 'ได้รับการพิจารณาและส่งอีเมลแจ้งผลเรียบร้อยแล้ว'}</p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-          <p style="margin: 0; color: #64748b; font-size: 0.85rem;"><em>ℹ️ หมายเหตุ: รายการนี้เป็นการพิจารณาก่อนอัปเดตระบบบันทึกเนื้อหาอีเมลฉบับเต็ม สำหรับการพิจารณาครั้งถัดไป ระบบจะแสดงเนื้อหาอีเมลทางการที่ร่างออกไปทั้งหมดในหน้านี้ทันที</em></p>
+      let notesText = r.adminNotes ? r.adminNotes.replace(/\n/g, '<br>') : 'ได้รับการตรวจสอบและพิจารณาโดยทีมงานเรียบร้อยแล้ว';
+      contentHtml = `
+        <p style="margin: 0 0 10px 0; color: #1e293b; font-size: 1.05rem; line-height: 1.6;">${notesText}</p>
+      `;
+    }
+
+    let engNotesSection = '';
+    if (r.engineerNotes && r.engineerNotes.trim() !== '' && r.engineerNotes !== '-') {
+      engNotesSection = `
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #cbd5e1;">
+          <strong style="color: #475569; display: flex; align-items: center; gap: 6px;">
+            <span>📐</span> ความเห็นและข้อเสนอแนะทางเทคนิคจากทีมวิศวกร/สถาปนิก:
+          </strong>
+          <p style="margin: 8px 0 0 0; color: #334155; line-height: 1.6;">${r.engineerNotes.replace(/\n/g, '<br>')}</p>
         </div>
       `;
     }
+
+    let adminContactSection = '';
+    if (r.respondedBy && r.respondedBy !== '-' && r.respondedBy !== 'ผู้ดูแลระบบ') {
+      adminContactSection = `
+        <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 0.9rem; color: #475569;">
+          👤 <strong style="color: #334155;">เจ้าหน้าที่ผู้รับผิดชอบและตอบคำร้องนี้:</strong> <span style="color: #ea580c; font-weight: bold;">${r.respondedBy}</span><br>
+          ✉️ <em>เมื่อท่านกดตอบกลับ (Reply) อีเมลฉบับนี้ ข้อความของท่านจะถูกส่งตรงไปยังอีเมลของเจ้าหน้าที่ท่านนี้โดยตรงครับ</em>
+        </div>
+      `;
+    }
+
+    bodyEl.innerHTML = `
+      <div style="font-family: 'Sarabun', 'Prompt', Arial, sans-serif; max-width: 100%; margin: 0 auto; padding: 25px; border: 1px solid #cbd5e1; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+        
+        <!-- EMAIL HEADER -->
+        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #f59e0b;">
+          <h2 style="color: #d97706; margin: 0; font-size: 1.35rem; font-weight: bold;">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)</h2>
+          <p style="color: #64748b; font-size: 0.95rem; margin: 6px 0 0;">แจ้งผลการพิจารณาและรายละเอียดสำหรับคำร้องรหัส <strong style="color: #1e293b;">${r.requestID}</strong></p>
+        </div>
+        
+        <!-- EMAIL BODY -->
+        <div style="padding: 22px 0; color: #334155; line-height: 1.7;">
+          <p style="font-size: 1.05rem; margin-top: 0; margin-bottom: 15px; color: #0f172a;">เรียน คุณ <strong>${r.applicantName}</strong>,</p>
+          <p style="font-size: 1rem; color: #334155; margin-bottom: 20px;">ตามที่ท่านได้ยื่นคำร้องผ่านระบบบริการตรวจสอบและคัดลอกแบบแปลนอาคารสถานที่ (STeP CMU Blueprint Portal) รหัสคำร้อง <strong style="color: #d97706;">${r.requestID}</strong> นั้น ทางอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU) ได้ดำเนินการตรวจสอบแบบแปลนและพิจารณารายละเอียดเสร็จสิ้นแล้ว โดยมีผลการพิจารณาและการดำเนินการดังนี้:</p>
+          
+          <!-- STATUS BADGE -->
+          <div style="margin: 22px 0; text-align: center;">
+            <span style="background-color: ${badgeBg}; color: white; padding: 8px 18px; border-radius: 25px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: inline-block;">
+              ${badgeText}
+            </span>
+          </div>
+
+          <!-- NOTES BOX -->
+          <div style="background-color: ${boxBg}; padding: 20px; border-left: 5px solid ${borderColor}; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(0,0,0,0.05);">
+            <h4 style="color: ${titleColorHex}; margin: 0 0 12px 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+              <span>📋</span> รายละเอียดผลการตรวจสอบและคำอธิบายจากเจ้าหน้าที่:
+            </h4>
+            <div style="color: #1e293b; font-size: 1rem; line-height: 1.6;">
+              ${contentHtml}
+            </div>
+            ${engNotesSection}
+          </div>
+
+          ${adminContactSection}
+
+          <p style="font-size: 0.95rem; color: #475569; margin-top: 25px;">
+            หากท่านมีข้อสงสัยเพิ่มเติม หรือต้องการประสานงานกับเจ้าหน้าที่ผู้ดูแลระบบ ท่านสามารถตอบกลับ (Reply) ในกระทู้อีเมลฉบับนี้ หรือติดต่อสอบถามได้ที่ฝ่ายบริหารจัดการอาคารสถานที่และนวัตกรรม STeP CMU ได้ในวันและเวลาราชการครับ
+          </p>
+        </div>
+
+        <!-- EMAIL FOOTER -->
+        <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 0.85rem;">
+          <p style="margin: 0; font-weight: 500; color: #334155;">ขอแสดงความนับถือ</p>
+          <p style="margin: 5px 0 15px 0; font-weight: bold; color: #d97706; font-size: 0.95rem;">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)</p>
+          <p style="margin: 0; color: #94a3b8; font-size: 0.8rem;">© 2026 Science and Technology Park, Chiang Mai University (STeP CMU)</p>
+        </div>
+
+      </div>
+    `;
   }
 
   const modal = document.getElementById('modal-reply-details');

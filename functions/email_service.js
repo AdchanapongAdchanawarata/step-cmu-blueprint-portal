@@ -147,7 +147,7 @@ async function sendThreadedReply(toEmail, applicantName, reqId, replyTextHtml, t
     });
 
     console.log(`✉️ ส่งอีเมลตอบกลับ (Reply Thread) ${reqId} สำเร็จ! Thread ID: ${res.data.threadId}`);
-    return true;
+    return { success: true, htmlBody };
   } catch (err) {
     console.error("Error sending threaded reply email:", err);
     throw err;

@@ -445,7 +445,7 @@ app.post('/api/admin/reply', requireAdmin, async (req, res) => {
 
     console.log(`📨 [Admin Reply] Sending threaded email for ${code} to ${request.email} (By: ${req.adminEmail})...`);
     // 2. Send threaded reply email via Gmail API
-    await sendThreadedReply(
+    const replyResult = await sendThreadedReply(
       request.email,
       request.applicantName,
       code,
@@ -455,9 +455,11 @@ app.post('/api/admin/reply', requireAdmin, async (req, res) => {
       req.adminEmail
     );
 
+    const fullSentHtml = (replyResult && replyResult.htmlBody) ? replyResult.htmlBody : replyHtml;
+
     // 3. Update status and notes in Google Sheet (including ReplyDetails)
     console.log(`📊 [Admin Reply] Updating database for ${code}...`);
-    await updateRequestDecision(code, status, adminNotes, engineerNotes, request.threadId, request.messageId, req.adminEmail, replyHtml);
+    await updateRequestDecision(code, status, adminNotes, engineerNotes, request.threadId, request.messageId, req.adminEmail, fullSentHtml);
 
     res.json({ success: true, message: "บันทึกผลการตัดสินใจและส่งอีเมลตอบกลับเรียบร้อยแล้ว!" });
   } catch (err) {
