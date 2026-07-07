@@ -192,8 +192,52 @@ async function sendAdminMagicLink(toEmail, token, baseUrl) {
   }
 }
 
+/**
+ * Send new request notification email to vachiravut@step.cmu.ac.th
+ */
+async function sendAdminNotificationEmail(reqId, applicantName, organization, buildingType, email, phone, fileLink) {
+  try {
+    const targetEmail = "vachiravut@step.cmu.ac.th";
+    const subject = `[STeP CMU Portal] 🚨 แจ้งเตือนคำร้องใหม่รหัส ${reqId} จากคุณ ${applicantName}`;
+    const htmlBody = `
+      <div style="font-family: 'Sarabun', 'Prompt', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #f59e0b;">
+          <h2 style="color: #d97706; margin: 0; font-size: 20px;">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)</h2>
+          <p style="color: #64748b; font-size: 14px; margin: 5px 0 0;">🚨 แจ้งเตือนคำร้องใหม่เข้าสู่ระบบ (New Request Alert)</p>
+        </div>
+        <div style="padding: 20px 0; color: #334155; line-height: 1.6;">
+          <p style="font-size: 16px;">เรียน <strong>คุณวชิราวุฒิ (ผู้ช่วยหัวหน้าทีม)</strong> และทีมงานตรวจสอบแบบแปลน,</p>
+          <p style="font-size: 15px;">มีผู้รับบริการยื่นคำร้องขอตรวจสอบ/คัดลอกแบบแปลนใหม่เข้าสู่ระบบ โดยมีรายละเอียดสำคัญดังนี้:</p>
+          <div style="background-color: #f8fafc; padding: 18px; border-left: 4px solid #3b82f6; border-radius: 6px; margin: 20px 0; border: 1px solid #e2e8f0;">
+            <p style="margin: 6px 0;"><strong>📌 รหัสคำร้อง:</strong> <span style="color: #d97706; font-size: 18px; font-weight: bold;">${reqId}</span></p>
+            <p style="margin: 6px 0;"><strong>👤 ผู้ยื่นคำร้อง:</strong> ${applicantName}</p>
+            <p style="margin: 6px 0;"><strong>🏢 หน่วยงาน/บริษัท:</strong> ${organization || '-'}</p>
+            <p style="margin: 6px 0;"><strong>📧 อีเมลติดต่อ:</strong> <a href="mailto:${email}" style="color: #3b82f6; text-decoration: none;">${email}</a></p>
+            <p style="margin: 6px 0;"><strong>📱 เบอร์โทรศัพท์:</strong> ${phone || '-'}</p>
+            <p style="margin: 6px 0;"><strong>🛠️ ประเภทงาน/วัตถุประสงค์:</strong> ${buildingType}</p>
+            ${fileLink ? `<p style="margin: 15px 0 5px;"><a href="${fileLink}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: bold; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">📂 คลิกเพื่อเปิดดูไฟล์แปลน/เอกสารแนบ</a></p>` : ''}
+          </div>
+          <p style="font-size: 15px;">กรุณาเข้าสู่ระบบหลังบ้าน (Admin Dashboard) เพื่อดำเนินการตรวจสอบแบบแปลน วิเคราะห์ความถูกต้อง และตอบกลับผู้ยื่นคำร้องได้ทันท่วงทีครับ</p>
+        </div>
+        <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px;">
+          <p>ระบบแจ้งเตือนอัตโนมัติจาก STeP CMU Blueprint Portal</p>
+        </div>
+      </div>
+    `;
+    const rawMessage = createRawEmail(targetEmail, subject, htmlBody);
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: { raw: rawMessage }
+    });
+    console.log(`🚨 Admin notification email sent to ${targetEmail} for ${reqId}`);
+  } catch (err) {
+    console.error("Error sending admin notification email:", err);
+  }
+}
+
 module.exports = {
   sendConfirmationEmail,
   sendThreadedReply,
-  sendAdminMagicLink
+  sendAdminMagicLink,
+  sendAdminNotificationEmail
 };

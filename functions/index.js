@@ -28,6 +28,7 @@ const {
   getRequestByCode,
   createRequestRecord,
   updateRequestDecision,
+  deleteRequestRecord,
   uploadToDrive,
   getKnowledgeList,
   addKnowledgeRecord,
@@ -38,7 +39,8 @@ const {
 const {
   sendConfirmationEmail,
   sendThreadedReply,
-  sendAdminMagicLink
+  sendAdminMagicLink,
+  sendAdminNotificationEmail
 } = require('./email_service');
 
 const app = express();
@@ -172,9 +174,10 @@ app.post('/api/request', async (req, res) => {
     });
     const reqId = tempRecord.requestID;
 
-    // 3. Send Confirmation Email (New Thread)
+    // 3. Send Confirmation Email (New Thread) & Admin Notification
     console.log(`📧 Sending confirmation email for ${reqId} to ${email}...`);
     const emailMeta = await sendConfirmationEmail(email, applicantName, reqId);
+    await sendAdminNotificationEmail(reqId, applicantName, organization, buildingType, email, phone, fileLink);
 
     // 4. Update row with Thread ID and Message ID
     if (emailMeta.threadId) {
@@ -452,14 +455,28 @@ app.post('/api/admin/reply', requireAdmin, async (req, res) => {
       req.adminEmail
     );
 
-    // 3. Update status and notes in Google Sheet
+    // 3. Update status and notes in Google Sheet (including ReplyDetails)
     console.log(`📊 [Admin Reply] Updating database for ${code}...`);
-    await updateRequestDecision(code, status, adminNotes, engineerNotes, request.threadId, request.messageId, req.adminEmail);
+    await updateRequestDecision(code, status, adminNotes, engineerNotes, request.threadId, request.messageId, req.adminEmail, replyHtml);
 
     res.json({ success: true, message: "บันทึกผลการตัดสินใจและส่งอีเมลตอบกลับเรียบร้อยแล้ว!" });
   } catch (err) {
     console.error("Admin Reply Error:", err);
     res.status(500).json({ success: false, error: "เกิดข้อผิดพลาดในการตอบกลับ: " + err.message });
+  }
+});
+
+/**
+ * Admin Delete Request
+ */
+app.delete('/api/admin/request/:id', requireAdmin, async (req, res) => {
+  try {
+    const reqId = req.params.id;
+    await deleteRequestRecord(reqId);
+    res.json({ success: true, message: `ลบคำร้องรหัส ${reqId} ออกจากระบบเรียบร้อยแล้ว` });
+  } catch (err) {
+    console.error("Error deleting request:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

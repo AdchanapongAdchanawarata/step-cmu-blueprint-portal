@@ -213,7 +213,12 @@
             <h2>🛡️ แผงควบคุมและจัดการคำร้อง (Admin Dashboard)</h2>
             <p>ตรวจสอบไฟล์แปลน วิเคราะห์ความถูกต้องด้วย AI และตอบกลับผู้ใช้แบบ Threading Email</p>
           </div>
-          <button class="btn btn-secondary" onclick="loadAdminRequests()">🔄 รีเฟรชข้อมูล</button>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); cursor: pointer; transition: all 0.2s;" onclick="openAnalyticsModal()">
+              <span style="font-size: 1.1rem;">📊</span> ดูเชิงสถิติ (Analytics)
+            </button>
+            <button class="btn btn-secondary" onclick="loadAdminRequests()">🔄 รีเฟรชข้อมูล</button>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -448,6 +453,54 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260707_step_cmu_org"></script>
+  <!-- MODAL: CONFIRM DELETE -->
+  <div id="modal-confirm-delete" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px; text-align: center; padding: 2.5rem; border: 1px solid rgba(239, 68, 68, 0.4); background: #0f172a; box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.3);">
+      <div style="font-size: 3.5rem; margin-bottom: 1rem;">🗑️</div>
+      <h3 style="font-size: 1.5rem; color: #f87171; margin-bottom: 0.5rem;">ยืนยันการลบคำร้อง</h3>
+      <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;" id="delete-confirm-text">
+        คุณต้องการลบคำร้องนี้ออกจากระบบจริงหรือไม่?
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="closeDeleteModal()">ยกเลิก</button>
+        <button class="btn" style="flex: 1; padding: 10px; background: #ef4444; color: white; border: none; font-weight: bold; border-radius: 8px; cursor: pointer;" onclick="executeDeleteRequest()">ยืนยันลบข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW REPLY DETAILS -->
+  <div id="modal-reply-details" class="modal-overlay">
+    <div class="modal-content" style="max-width: 750px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; padding: 2rem; background: #0f172a; border: 1px solid rgba(59, 130, 246, 0.4); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.2rem;">
+        <h3 id="reply-details-title" style="font-size: 1.3rem; color: #60a5fa; margin: 0; display: flex; align-items: center; gap: 8px;">👁️ รายละเอียดการตอบกลับผู้รับบริการ</h3>
+        <button class="close-btn" onclick="closeReplyDetailsModal()" style="font-size: 1.8rem; background: none; border: none; color: #94a3b8; cursor: pointer;">&times;</button>
+      </div>
+      <div id="reply-details-meta" style="background: rgba(30, 41, 59, 0.6); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; line-height: 1.6; border: 1px solid rgba(255,255,255,0.05);"></div>
+      <h4 style="color: #e2e8f0; font-size: 0.95rem; margin: 0 0 8px 0;">📨 เนื้อหาข้อความอีเมลที่ตอบกลับ (Email Body):</h4>
+      <div id="reply-details-body" style="flex: 1; overflow-y: auto; background: #ffffff; color: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Sarabun', 'Prompt', sans-serif; line-height: 1.6;"></div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button class="btn btn-secondary" onclick="closeReplyDetailsModal()" style="padding: 10px 24px;">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ANALYTICS DASHBOARD -->
+  <div id="modal-analytics" class="modal-overlay">
+    <div class="modal-content" style="max-width: 1100px; width: 96%; max-height: 90vh; display: flex; flex-direction: column; padding: 2rem; background: #0f172a; border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <h3 style="font-size: 1.4rem; color: #fbbf24; margin: 0; display: flex; align-items: center; gap: 10px;">📊 สถิติและเชิงวิเคราะห์การดำเนินงาน (Analytics & KPI Dashboard)</h3>
+          <p style="color: #94a3b8; font-size: 0.85rem; margin: 4px 0 0 0;">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP CMU)</p>
+        </div>
+        <button class="close-btn" onclick="closeAnalyticsModal()" style="font-size: 1.8rem; background: none; border: none; color: #94a3b8; cursor: pointer;">&times;</button>
+      </div>
+      <div id="analytics-content-area" style="flex: 1; overflow-y: auto; padding-right: 5px;"></div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button class="btn btn-secondary" onclick="closeAnalyticsModal()" style="padding: 10px 24px;">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=20260707_v4_admin_features"></script>
 </body>
 </html>

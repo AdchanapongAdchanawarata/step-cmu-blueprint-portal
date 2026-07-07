@@ -57,7 +57,7 @@ async function getAllRequests() {
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: config.SPREADSHEET_ID,
-      range: 'Requests!A2:N',
+      range: 'Requests!A2:O',
     });
     const rows = res.data.values || [];
     return rows.map(row => ({
@@ -74,7 +74,8 @@ async function getAllRequests() {
       engineerNotes: row[10] || '',
       threadId: row[11] || '',
       messageId: row[12] || '',
-      respondedBy: row[13] || ''
+      respondedBy: row[13] || '',
+      replyDetails: row[14] || ''
     })).reverse(); // Newest first
   } catch (err) {
     console.error("Error fetching all requests:", err);
@@ -138,11 +139,11 @@ async function createRequestRecord(data) {
 /**
  * Update request status and notes in Google Sheet
  */
-async function updateRequestDecision(code, status, adminNotes, engineerNotes, threadId, messageId, adminEmail = '') {
+async function updateRequestDecision(code, status, adminNotes, engineerNotes, threadId, messageId, adminEmail = '', replyDetails = '') {
   try {
     const resGet = await sheets.spreadsheets.values.get({
       spreadsheetId: config.SPREADSHEET_ID,
-      range: 'Requests!A1:N',
+      range: 'Requests!A1:O',
     });
     const rows = resGet.data.values || [];
     let rowIndex = -1;
@@ -154,7 +155,7 @@ async function updateRequestDecision(code, status, adminNotes, engineerNotes, th
     }
     if (rowIndex === -1) throw new Error(`Request ${code} not found in database.`);
 
-    // Update specific columns: I=Status(8), J=AdminNotes(9), K=EngNotes(10), L=ThreadID(11), M=MsgID(12), N=AdminEmail(13)
+    // Update specific columns: I=Status(8), J=AdminNotes(9), K=EngNotes(10), L=ThreadID(11), M=MsgID(12), N=AdminEmail(13), O=ReplyDetails(14)
     const currentRow = rows[rowIndex - 1];
     const updatedStatus = status || currentRow[8];
     const updatedAdminNotes = adminNotes !== undefined ? adminNotes : currentRow[9];
@@ -162,17 +163,66 @@ async function updateRequestDecision(code, status, adminNotes, engineerNotes, th
     const updatedThreadId = threadId || currentRow[11];
     const updatedMsgId = messageId || currentRow[12];
     const updatedAdminEmail = adminEmail !== undefined && adminEmail !== '' ? adminEmail : (currentRow[13] || '');
+    const updatedReplyDetails = replyDetails !== undefined && replyDetails !== '' ? replyDetails : (currentRow[14] || '');
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: config.SPREADSHEET_ID,
-      range: `Requests!I${rowIndex}:N${rowIndex}`,
+      range: `Requests!I${rowIndex}:O${rowIndex}`,
       valueInputOption: 'USER_ENTERED',
-      resource: { values: [[updatedStatus, updatedAdminNotes, updatedEngNotes, updatedThreadId, updatedMsgId, updatedAdminEmail]] }
+      resource: { values: [[updatedStatus, updatedAdminNotes, updatedEngNotes, updatedThreadId, updatedMsgId, updatedAdminEmail, updatedReplyDetails]] }
     });
 
     return true;
   } catch (err) {
     console.error("Error updating decision:", err);
+    throw err;
+  }
+}
+
+/**
+ * Delete a request record from Google Sheet by ID (e.g. REQ-1001)
+ */
+async function deleteRequestRecord(code) {
+  try {
+    const resGet = await sheets.spreadsheets.values.get({
+      spreadsheetId: config.SPREADSHEET_ID,
+      range: 'Requests!A1:A',
+    });
+    const rows = resGet.data.values || [];
+    let rowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if ((rows[i][0] || '').toUpperCase() === code.toUpperCase()) {
+        rowIndex = i; // 0-indexed for deleteDimension
+        break;
+      }
+    }
+    if (rowIndex === -1) throw new Error(`Request ${code} not found in database.`);
+
+    const sheetMeta = await sheets.spreadsheets.get({ spreadsheetId: config.SPREADSHEET_ID });
+    const requestSheet = sheetMeta.data.sheets.find(s => s.properties.title === 'Requests') || sheetMeta.data.sheets[0];
+    const sheetId = requestSheet.properties.sheetId;
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: config.SPREADSHEET_ID,
+      resource: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: 'ROWS',
+                startIndex: rowIndex,
+                endIndex: rowIndex + 1
+              }
+            }
+          }
+        ]
+      }
+    });
+    console.log(`🗑️ Deleted row index ${rowIndex} for request ${code}`);
+    return true;
+  } catch (err) {
+    console.error("Error deleting request record:", err);
     throw err;
   }
 }
@@ -328,6 +378,7 @@ module.exports = {
   getRequestByCode,
   createRequestRecord,
   updateRequestDecision,
+  deleteRequestRecord,
   uploadToDrive,
   getKnowledgeList,
   addKnowledgeRecord,
