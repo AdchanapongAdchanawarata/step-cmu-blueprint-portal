@@ -33,15 +33,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkMagicLinkToken(); // Must await so token is stored before checking login state
   checkLoginState();
 
-  // Handle URL hash or param for admin access (from admin.html or #admin)
-  if (window.location.hash === '#admin' || window.location.search.includes('admin') || window.location.pathname.includes('admin')) {
-    if (isLoggedIn()) {
-      switchView('view-admin-dashboard');
-    } else {
-      switchView('view-admin-login');
-    }
-  }
+  // Handle URL hash or param for routing
+  handleHashRouting();
+  window.addEventListener('hashchange', handleHashRouting);
 });
+
+function handleHashRouting() {
+  const hash = window.location.hash || '';
+  if (hash === '#admin' || window.location.search.includes('admin') || window.location.pathname.includes('admin')) {
+    if (isLoggedIn()) {
+      switchView('view-admin-dashboard', false);
+    } else {
+      switchView('view-admin-login', false);
+    }
+  } else if (hash === '#status') {
+    switchView('view-status', false);
+  } else if (hash === '#kb') {
+    switchView('view-admin-kb', false);
+  } else if (hash === '#request') {
+    switchView('view-request', false);
+  }
+}
 
 /**
  * Navigation & View Switching
@@ -56,11 +68,23 @@ function setupNavigation() {
   });
 }
 
-function switchView(viewId) {
+function switchView(viewId, updateHash = true) {
   // Check auth for admin views
   if ((viewId === 'view-admin-dashboard' || viewId === 'view-admin-kb') && !isLoggedIn()) {
     showNotification("กรุณาเข้าสู่ระบบสำหรับเจ้าหน้าที่ก่อนใช้งาน", "warning");
     viewId = 'view-admin-login';
+  }
+
+  if (updateHash && history.replaceState) {
+    if (viewId === 'view-admin-dashboard' || viewId === 'view-admin-login') {
+      history.replaceState(null, null, '#admin');
+    } else if (viewId === 'view-status') {
+      history.replaceState(null, null, '#status');
+    } else if (viewId === 'view-admin-kb') {
+      history.replaceState(null, null, '#kb');
+    } else if (viewId === 'view-request') {
+      history.replaceState(null, null, window.location.pathname + window.location.search);
+    }
   }
 
   // Update Nav Buttons
