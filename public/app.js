@@ -725,13 +725,18 @@ async function openAIStudioModal(reqId) {
     bpLink.style.display = 'none';
   }
 
-  // Left Pane: AI Review Box
-  const reviewBox = document.getElementById('studio-ai-review-box');
-  reviewBox.innerHTML = `<div style="text-align:center; padding: 2rem;"><div class="spinner" style="width:30px; height:30px; margin: 0 auto;"></div><p style="margin-top:10px; color:#fbbf24;">AI กำลังตรวจสอบภาพแปลนและคำนวณข้อกำหนดโครงสร้าง...</p></div>`;
-
-  // Left Pane: Chat Feed
+  // Left Pane: Combined Collaborative Chat Feed
   const chatFeed = document.getElementById('studio-chat-feed');
-  chatFeed.innerHTML = `<div style="background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; color: #bae6fd;">💡 <strong>ระบบผู้ช่วยอัจฉริยะ:</strong> ท่านสามารถพิมพ์คำถามสอบถามรายละเอียดเชิงลึกของแปลนนี้ได้ครับ เช่น *"ระยะยื่นระเบียงผ่านเกณฑ์มั้ย?"* หรือ *"ค่าการรับน้ำหนักพื้นตามกฎกระทรวงคือเท่าไร?"*</div>`;
+  chatFeed.innerHTML = `
+    <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; color: #bae6fd; line-height: 1.6;">
+      💡 <strong>พื้นที่ร่วมวิเคราะห์และหารือทางวิศวกรรม (AI & Engineer Discussion Space):</strong><br>
+      ระบบกำลังวิเคราะห์แบบแปลนตามกฎกระทรวง 3 ฉบับ และสรุปประเด็นสำคัญพร้อมตั้งคำถามชวนคิดให้ท่านวิศวกรและผู้ดูแลระบบร่วมหารือ (Discussion) เพื่อพิจารณาคำร้องนี้ครับ...
+    </div>
+    <div id="studio-review-loading" style="align-self: flex-start; background: rgba(30,41,59,0.9); border: 1px solid #f59e0b; color: #fbbf24; padding: 14px 18px; border-radius: 12px 12px 12px 2px; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); max-width: 95%;">
+      <div class="spinner" style="width:22px; height:22px; flex-shrink:0;"></div>
+      <span><strong>🤖 AI ผู้ช่วยวิศวกร:</strong> กำลังวิเคราะห์แบบแปลน วัสดุ ฐานราก และโครงสร้างโครงการ...</span>
+    </div>
+  `;
   document.getElementById('studio-chat-input').value = '';
 
   // Right Pane: Form setup
@@ -760,21 +765,38 @@ async function openAIStudioModal(reqId) {
       })
     });
     const data = await res.json();
+    const loadingElem = document.getElementById('studio-review-loading');
+    if (loadingElem) loadingElem.remove();
+
     if (data.success) {
       const formatted = formatMarkdownToHtml(data.analysis);
-      reviewBox.innerHTML = `<div id="studio-review-text" style="color: #e2e8f0;">${formatted}</div>`;
+      chatFeed.innerHTML += `
+        <div style="align-self: flex-start; background: rgba(15, 23, 42, 0.95); border: 1px solid #34d399; color: #e2e8f0; padding: 16px 20px; border-radius: 12px 12px 12px 2px; max-width: 95%; font-size: 0.95rem; line-height: 1.7; box-shadow: 0 6px 20px rgba(0,0,0,0.5);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(52, 211, 153, 0.3); padding-bottom: 8px; margin-bottom: 12px;">
+            <span style="color: #34d399; font-weight: bold; font-size: 1rem;">🤖 สรุปผลการตรวจสอบและคำถามชวนคิดเพื่อการหารือ (AI Summary & Discussion Prompt):</span>
+            <span style="font-size: 0.75rem; background: rgba(52, 211, 153, 0.2); color: #34d399; padding: 2px 8px; border-radius: 4px;">พร้อมหารือ</span>
+          </div>
+          <div id="studio-review-text">${formatted}</div>
+        </div>
+      `;
+      studioChatHistory.push({ role: 'ai', text: data.analysis });
     } else {
-      let errHtml = `<p style="color:#f87171; text-align:center; padding:1rem;">❌ เกิดข้อผิดพลาด: ${data.error}</p>`;
+      let errHtml = `<div style="align-self: flex-start; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 12px 16px; border-radius: 8px; color: #f87171; font-size: 0.9rem;">❌ เกิดข้อผิดพลาดในการวิเคราะห์: ${data.error}</div>`;
       if (data.error && (data.error.includes("โควต้า") || data.error.includes("429") || data.error.includes("EXHAUSTED") || data.error.includes("limit"))) {
-        errHtml = `<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 1rem; border-radius: 8px; text-align: center;">
-          <strong style="color: #f87171;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) เต็มชั่วคราว</strong><br>
-          <span style="color: #34d399; font-size: 0.85rem;">รอประมาณ 1-2 นาที หรือรอรีเซ็ต 14:00 น. ครับ (ห้ามเปิดใช้ระบบเสียเงินตามข้อสั่งการผู้บริหาร)</span>
+        errHtml = `
+        <div style="align-self: flex-start; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 16px; border-radius: 10px; text-align: center; max-width: 95%;">
+          <strong style="color: #f87171; font-size: 1rem;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) เต็มชั่วคราว</strong><br>
+          <span style="color: #34d399; font-size: 0.85rem; margin-top: 6px; display: block;">รอประมาณ 1-2 นาที หรือรอรีเซ็ต 14:00 น. ครับ (ห้ามเปิดใช้ระบบเสียเงินตามข้อสั่งการผู้บริหาร)<br>ท่านสามารถพิมพ์สนทนาหรือหารือในช่องแชทด้านล่างต่อได้ครับ</span>
         </div>`;
       }
-      reviewBox.innerHTML = errHtml;
+      chatFeed.innerHTML += errHtml;
     }
+    chatFeed.scrollTop = chatFeed.scrollHeight;
   } catch (err) {
-    reviewBox.innerHTML = `<p style="color:#f87171; text-align:center;">ไม่สามารถเชื่อมต่อระบบ AI ได้ในขณะนี้</p>`;
+    const loadingElem = document.getElementById('studio-review-loading');
+    if (loadingElem) loadingElem.remove();
+    chatFeed.innerHTML += `<div style="align-self: flex-start; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 12px 16px; border-radius: 8px; color: #f87171; font-size: 0.9rem;">❌ ไม่สามารถเชื่อมต่อระบบ AI ได้ในขณะนี้</div>`;
+    chatFeed.scrollTop = chatFeed.scrollHeight;
   }
 }
 
@@ -802,12 +824,12 @@ async function sendStudioChatMessage() {
   if (!message) return;
 
   const feed = document.getElementById('studio-chat-feed');
-  feed.innerHTML += `<div style="align-self: flex-end; background: #0284c7; color: #fff; padding: 8px 14px; border-radius: 12px 12px 2px 12px; max-width: 85%; font-size: 0.9rem; margin-top: 6px;"><strong>🧑‍🔧 วิศวกร:</strong> ${message}</div>`;
+  feed.innerHTML += `<div style="align-self: flex-end; background: #0284c7; color: #fff; padding: 10px 16px; border-radius: 12px 12px 2px 12px; max-width: 85%; font-size: 0.95rem; margin-top: 6px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);"><strong>🧑‍🔧 วิศวกร:</strong> ${message}</div>`;
   input.value = '';
   feed.scrollTop = feed.scrollHeight;
 
   const loadingId = 'chat-loading-' + Date.now();
-  feed.innerHTML += `<div id="${loadingId}" style="align-self: flex-start; background: rgba(30,41,59,0.8); color: #fbbf24; padding: 8px 14px; border-radius: 12px 12px 12px 2px; font-size: 0.85rem; margin-top: 6px; display: flex; align-items: center; gap: 8px;"><div class="spinner" style="width:16px; height:16px;"></div> AI กำลังตรวจสอบภาพแปลนและค้นหาคำตอบ...</div>`;
+  feed.innerHTML += `<div id="${loadingId}" style="align-self: flex-start; background: rgba(30,41,59,0.8); color: #fbbf24; padding: 10px 16px; border-radius: 12px 12px 12px 2px; font-size: 0.9rem; margin-top: 6px; display: flex; align-items: center; gap: 8px;"><div class="spinner" style="width:16px; height:16px;"></div> AI กำลังคิดวิเคราะห์และหาข้อมูลตอบกลับ...</div>`;
   feed.scrollTop = feed.scrollHeight;
 
   try {
@@ -831,7 +853,7 @@ async function sendStudioChatMessage() {
       studioChatHistory.push({ role: 'user', text: message });
       studioChatHistory.push({ role: 'ai', text: data.reply });
       const formattedReply = formatMarkdownToHtml(data.reply);
-      feed.innerHTML += `<div style="align-self: flex-start; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); color: #e2e8f0; padding: 10px 14px; border-radius: 12px 12px 12px 2px; max-width: 90%; font-size: 0.9rem; margin-top: 6px; line-height: 1.5;"><strong>🤖 AI ที่ปรึกษา:</strong> ${formattedReply}</div>`;
+      feed.innerHTML += `<div style="align-self: flex-start; background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(56, 189, 248, 0.4); color: #e2e8f0; padding: 14px 18px; border-radius: 12px 12px 12px 2px; max-width: 90%; font-size: 0.95rem; margin-top: 6px; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.3);"><div style="color: #38bdf8; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">🤖 AI คู่คิดร่วมตัดสินใจ (Co-Engineer):</div>${formattedReply}</div>`;
     } else {
       feed.innerHTML += `<div style="align-self: flex-start; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; margin-top: 6px;">❌ ไม่สามารถตอบคำถามได้: ${data.error}</div>`;
     }
