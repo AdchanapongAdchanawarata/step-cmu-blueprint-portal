@@ -107,9 +107,18 @@ async function sendConfirmationEmail(toEmail, applicantName, reqId) {
 /**
  * 2. Send threaded reply email from Admin
  */
-async function sendThreadedReply(toEmail, applicantName, reqId, replyTextHtml, threadId, originalMessageId, adminEmail = null) {
+async function sendThreadedReply(toEmail, applicantName, reqId, replyTextHtml, threadId, originalMessageId, adminEmail = null, attachments = []) {
   try {
     const subject = `Re: [STeP CMU] ยืนยันการรับคำร้องงานแบบแปลนและอาคารสถานที่ (รหัส: ${reqId})`;
+    
+    const attachmentsHtml = (attachments && attachments.length > 0) ? `
+          <div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 16px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="margin: 0 0 10px 0; color: #166534; font-size: 14px; display: flex; align-items: center; gap: 6px;">📎 เอกสารแนบเพิ่มเติมจากวิศวกร/เจ้าหน้าที่ (Attachments):</h4>
+            <ul style="margin: 0; padding-left: 20px; color: #15803d; line-height: 1.8;">
+              ${attachments.map(att => `<li style="margin-bottom: 6px;"><a href="${att.url}" target="_blank" style="color: #1d4ed8; font-weight: bold; text-decoration: underline;">${att.name}</a> <span style="color: #64748b; font-size: 12px;">(คลิกเพื่อเปิดดูหรือดาวน์โหลดไฟล์)</span></li>`).join('')}
+            </ul>
+          </div>` : '';
+
     const htmlBody = `
       <div style="font-family: 'Sarabun', 'Prompt', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px; background-color: #ffffff;">
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #f59e0b;">
@@ -121,6 +130,7 @@ async function sendThreadedReply(toEmail, applicantName, reqId, replyTextHtml, t
           <div style="background-color: #fffbeb; padding: 20px; border-left: 4px solid #f59e0b; border-radius: 4px; margin: 20px 0;">
             ${replyTextHtml}
           </div>
+          ${attachmentsHtml}
           ${adminEmail ? `
           <div style="background-color: #fffbeb; border: 1px dashed #f59e0b; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px; color: #78350f;">
             👤 <strong>เจ้าหน้าที่ผู้รับผิดชอบและตอบคำร้องนี้:</strong> <span style="color: #ea580c; font-weight: bold;">${adminEmail}</span><br>

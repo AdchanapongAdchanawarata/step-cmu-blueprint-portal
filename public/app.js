@@ -11,6 +11,20 @@ let currentRequests = [];
 let selectedRequestForAI = null;
 let currentKBList = [];
 
+/**
+ * Helper: Clean out "[ผลตรวจจาก AI]" and any AI references from displayed or saved texts
+ */
+function cleanAIPrefixes(str) {
+  if (!str || typeof str !== 'string') return str || '';
+  return str.replace(/\[\s*(?:ผลตรวจ|ผลตรวจสอบ|ผลการวิเคราะห์)?\s*(?:จาก|ของ)?\s*(?:AI|ระบบปัญญาประดิษฐ์|เอไอ|ai)\s*\]\s*[:-]?\s*/gi, '')
+            .replace(/\[\s*ผลตรวจจาก\s*AI\s*\]\s*/gi, '')
+            .replace(/\[\s*ผลตรวจ\s*AI\s*\]\s*/gi, '')
+            .replace(/\[\s*จาก\s*AI\s*\]\s*/gi, '')
+            .replace(/AI\s*ตอบ\s*:/gi, 'ผลการตรวจสอบ:')
+            .replace(/\[\s*AI\s*ตอบ\s*\]\s*[:-]?\s*/gi, 'ผลการตรวจสอบ: ')
+            .trim();
+}
+
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', async () => {
   setupNavigation();
@@ -455,6 +469,9 @@ async function handleCheckStatus(e) {
 
     if (data.success && data.data) {
       const r = data.data;
+      r.adminNotes = cleanAIPrefixes(r.adminNotes);
+      r.engineerNotes = cleanAIPrefixes(r.engineerNotes);
+      r.replyDetails = cleanAIPrefixes(r.replyDetails);
       let badgeClass = 'badge-pending';
       if (r.status === 'อนุมัติ') badgeClass = 'badge-approved';
       if (r.status === 'ขอแก้ไขรายละเอียด' || r.status === 'ขอแก้ไข') badgeClass = 'badge-revision';
@@ -564,7 +581,12 @@ async function loadAdminRequests() {
     }
 
     if (data.success && data.data) {
-      currentRequests = data.data;
+      currentRequests = data.data.map(r => ({
+        ...r,
+        adminNotes: cleanAIPrefixes(r.adminNotes),
+        engineerNotes: cleanAIPrefixes(r.engineerNotes),
+        replyDetails: cleanAIPrefixes(r.replyDetails)
+      }));
       renderAdminTable(currentRequests);
     } else {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#f87171;">❌ ${data.error || 'ไม่สามารถโหลดข้อมูลได้'}</td></tr>`;
@@ -626,6 +648,7 @@ function renderAdminTable(requests) {
  * 5. AI Blueprint Studio & Official Reply Crafter (Split-Screen)
  */
 let studioChatHistory = [];
+let studioAttachments = [];
 let adminDirectoryList = [];
 let loggedInContact = null; // Auto-detected from login email
 
@@ -679,6 +702,8 @@ async function openAIStudioModal(reqId) {
   if (!req) return;
   selectedRequestForAI = req;
   studioChatHistory = [];
+  studioAttachments = [];
+  renderStudioAttachments();
 
   // Ensure directory is loaded
   if (adminDirectoryList.length === 0) {
@@ -712,8 +737,8 @@ async function openAIStudioModal(reqId) {
   // Right Pane: Form setup
   document.getElementById('studio-reply-req-id').value = req.requestID;
   document.getElementById('studio-status-select').value = req.status === 'รอดำเนินการ' ? 'อนุมัติ' : req.status;
-  document.getElementById('studio-admin-notes').value = req.adminNotes || '';
-  document.getElementById('studio-eng-notes').value = req.engineerNotes || '';
+  document.getElementById('studio-admin-notes').value = cleanAIPrefixes(req.adminNotes || '');
+  document.getElementById('studio-eng-notes').value = cleanAIPrefixes(req.engineerNotes || '');
   document.getElementById('studio-reply-editor-area').innerHTML = `<p style="color: #64748b; text-align: center; padding-top: 3rem;">👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br><strong style="color: #f59e0b;">"➡️ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลด้านขวา"</strong><br> เพื่อให้ AI ร่างข้อความอีเมลตอบกลับทางการให้อัตโนมัติในช่องนี้</p>`;
 
   // Right Pane: Auto-lock contact person to logged-in admin
@@ -731,7 +756,7 @@ async function openAIStudioModal(reqId) {
         buildingType: req.buildingType,
         organization: req.organization,
         fileLink: req.fileLink,
-        notes: req.adminNotes || req.engineerNotes
+        notes: cleanAIPrefixes(req.adminNotes || req.engineerNotes)
       })
     });
     const data = await res.json();
@@ -766,7 +791,7 @@ function copyStudioAIReview() {
   const box = document.getElementById('studio-review-text') || document.getElementById('studio-ai-review-box');
   if (box) {
     navigator.clipboard.writeText(box.innerText);
-    showNotification("📋 คัดลอกผลตรวจของ AI เรียบร้อยแล้ว", "success");
+    showNotification("📋 คัดลอกผลการตรวจสอบเรียบร้อยแล้ว", "success");
   }
 }
 
@@ -829,8 +854,8 @@ function transferStudioToReply() {
     chatSummary = studioChatHistory.map(h => `${h.role === 'user' ? 'ประเด็นสอบถาม' : 'ผลการตรวจสอบ'}: ${h.text}`).join(' | ');
   }
 
-  const combinedSummary = `[ผลตรวจสอบทางวิศวกรรม] ${reviewText.substring(0, 400)}... ${chatSummary ? ' | [บันทึกการพิจารณาเพิ่มเติม] ' + chatSummary.substring(0, 300) : ''}`;
-  document.getElementById('studio-eng-notes').value = combinedSummary;
+  const combinedSummary = `[ผลตรวจสอบทางวิศวกรรม] ${cleanAIPrefixes(reviewText).substring(0, 400)}... ${chatSummary ? ' | [บันทึกการพิจารณาเพิ่มเติม] ' + cleanAIPrefixes(chatSummary).substring(0, 300) : ''}`;
+  document.getElementById('studio-eng-notes').value = cleanAIPrefixes(combinedSummary);
 
   showNotification("➡️ ย้ายข้อสรุปการตรวจสอบมายังช่องข้อแนะนำฝั่งขวาแล้ว กำลังร่างอีเมลทางการ...", "success");
   handleStudioGenerateReply();
@@ -901,7 +926,7 @@ async function handleStudioSubmitReply(e) {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({
-        code, status, adminNotes, engineerNotes, replyHtml
+        code, status, adminNotes, engineerNotes, replyHtml, attachments: studioAttachments
       })
     });
     const data = await res.json();
@@ -918,6 +943,70 @@ async function handleStudioSubmitReply(e) {
     hideLoadingModal();
     showNotification("ข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์", "error");
   }
+}
+
+async function handleStudioUploadAttachments(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    showNotification(`⏳ กำลังอัปโหลดไฟล์ ${file.name} ไปที่ Google Drive...`, "info");
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Data = e.target.result;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/upload-attachment`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              base64Data: base64Data,
+              fileName: file.name,
+              mimeType: file.type || ''
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            studioAttachments.push({ name: file.name, url: data.url });
+            renderStudioAttachments();
+            showNotification(`✅ อัปโหลดไฟล์ ${file.name} สำเร็จ!`, "success");
+          } else {
+            showNotification(`❌ อัปโหลด ${file.name} ไม่สำเร็จ: ${data.error}`, "error");
+          }
+        } catch (err) {
+          showNotification(`❌ ข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ขณะอัปโหลด ${file.name}`, "error");
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      showNotification(`❌ ไม่สามารถอ่านไฟล์ ${file.name} ได้`, "error");
+    }
+  }
+  // reset input
+  event.target.value = '';
+}
+
+function removeStudioAttachment(index) {
+  studioAttachments.splice(index, 1);
+  renderStudioAttachments();
+}
+
+function renderStudioAttachments() {
+  const container = document.getElementById('studio-attachment-list');
+  if (!container) return;
+  if (studioAttachments.length === 0) {
+    container.innerHTML = `<span style="font-size: 0.75rem; color: #64748b; font-style: italic;">ยังไม่ได้แนบเอกสารเพิ่มเติม (สามารถอัปโหลดไฟล์ CAD, SketchUp, 3D, PDF หรือรูปภาพ เพื่อส่งลิงก์ดาวน์โหลดให้ผู้ยื่นคำร้องได้)</span>`;
+    return;
+  }
+
+  container.innerHTML = studioAttachments.map((att, idx) => `
+    <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; color: #bae6fd; display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; margin-bottom: 4px;">
+      <span>📎 <a href="${att.url}" target="_blank" style="color: #fff; text-decoration: underline; font-weight: bold;">${att.name}</a></span>
+      <button type="button" onclick="removeStudioAttachment(${idx})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-weight: bold; font-size: 1rem; padding: 0 4px; line-height: 1;" title="ลบไฟล์แนบ">&times;</button>
+    </div>
+  `).join('');
 }
 
 /**
@@ -1199,6 +1288,10 @@ function viewReplyDetails(reqId) {
   }
 
   if (bodyEl) {
+    r.replyDetails = cleanAIPrefixes(r.replyDetails);
+    r.adminNotes = cleanAIPrefixes(r.adminNotes);
+    r.engineerNotes = cleanAIPrefixes(r.engineerNotes);
+
     // If replyDetails already has full email wrapper, show it directly
     if (r.replyDetails && r.replyDetails.includes('อุทยานวิทยาศาสตร์และเทคโนโลยี')) {
       bodyEl.innerHTML = r.replyDetails;

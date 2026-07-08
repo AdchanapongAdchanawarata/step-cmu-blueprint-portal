@@ -345,8 +345,8 @@
 
           <!-- 2. MIDDLE: AI MULTIMODAL ANALYSIS -->
           <div style="font-size: 0.9rem; font-weight: bold; color: #34d399; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <span>🤖 ผลวิเคราะห์แปลนจากสมองกล AI (ตามกฎกระทรวง 3 ฉบับ):</span>
-            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="copyStudioAIReview()">📋 คัดลอกผลตรวจ</button>
+            <span>🤖 ผลวิเคราะห์แปลนจากระบบอัจฉริยะ (ตามกฎกระทรวง 3 ฉบับ):</span>
+            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="copyStudioAIReview()">📋 คัดลอกผลการตรวจสอบ</button>
           </div>
           <div id="studio-ai-review-box" class="ai-box" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 16px; overflow-y: auto; max-height: 280px; font-size: 0.9rem; line-height: 1.6; color: #e2e8f0; flex-shrink: 0;">
             <div style="text-align:center; padding: 2rem;">
@@ -413,7 +413,7 @@
                 <input type="text" id="studio-admin-notes" placeholder="เช่น อนุมัติให้ดำเนินการได้ตามวัตถุประสงค์" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
               </div>
               <div>
-                <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px;">🧑‍🔧 ข้อแนะนำทางเทคนิค / ข้อสรุปจาก AI</label>
+                <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px;">🧑‍🔧 ข้อแนะนำและสรุปผลการตรวจสอบทางเทคนิค</label>
                 <input type="text" id="studio-eng-notes" placeholder="ข้อสรุปและข้อแนะนำจะถูกเติมอัตโนมัติเมื่อกดปุ่มย้ายข้อมูล" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
               </div>
             </div>
@@ -430,6 +430,20 @@
               <p style="color: #64748b; text-align: center; padding-top: 3rem;">
                 👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br><strong style="color: #f59e0b;">"➡️ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลด้านขวา"</strong><br> เพื่อให้ AI ร่างข้อความอีเมลตอบกลับทางการให้อัตโนมัติในช่องนี้
               </p>
+            </div>
+
+            <!-- 4. ATTACHMENT UPLOADER -->
+            <div style="background: rgba(15, 23, 42, 0.8); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 10px 14px; margin-top: 4px; flex-shrink: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.85rem; font-weight: bold; color: #38bdf8;">📎 เอกสารแนบเพิ่มเติม (ส่งแปลนแก้ไข / เอกสารแนะนำ / CAD / 3D / PDF / รูปภาพ):</span>
+                <label class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.75rem; background: #0284c7; border-color: #0369a1; cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 4px; color: #fff;">
+                  <span>➕ อัปโหลดไฟล์แนบ</span>
+                  <input type="file" id="studio-attachment-input" style="display: none;" multiple accept=".pdf,.png,.jpg,.jpeg,.dwg,.dxf,.skp,.obj,.fbx,.stl,.rvt,.ifc,.step,.iges,.zip,.rar,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onchange="handleStudioUploadAttachments(event)">
+                </label>
+              </div>
+              <div id="studio-attachment-list" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 20px; align-items: center;">
+                <span style="font-size: 0.75rem; color: #64748b; font-style: italic;">ยังไม่ได้แนบเอกสารเพิ่มเติม (สามารถอัปโหลดไฟล์ CAD, SketchUp, 3D, PDF หรือรูปภาพ เพื่อส่งลิงก์ดาวน์โหลดให้ผู้ยื่นคำร้องได้)</span>
+              </div>
             </div>
 
             <!-- 4. BOTTOM ACTION BAR -->
@@ -501,6 +515,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260707_v6_admin_title_updated"></script>
+  <!-- Scripts -->
+  <script src="app.js?v=20260708_v8_admin_attachments"></script>
 </body>
 </html>

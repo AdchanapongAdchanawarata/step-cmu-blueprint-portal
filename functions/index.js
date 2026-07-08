@@ -47,7 +47,15 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 const JWT_SECRET = "STeP_CMU_SUPER_SECRET_KEY_2026_AI_PORTAL";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
@@ -56,7 +64,30 @@ function detectMimeType(fileName) {
   const lower = (fileName || '').toLowerCase();
   if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
   if (lower.endsWith('.png')) return 'image/png';
-  return 'application/pdf';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.dwg') || lower.endsWith('.dxf')) return 'application/acad';
+  if (lower.endsWith('.skp')) return 'application/vnd.sketchup.skp';
+  if (lower.endsWith('.zip')) return 'application/zip';
+  if (lower.endsWith('.rar')) return 'application/x-rar-compressed';
+  if (lower.endsWith('.doc') || lower.endsWith('.docx')) return 'application/msword';
+  if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return 'application/vnd.ms-excel';
+  if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) return 'application/vnd.ms-powerpoint';
+  return 'application/octet-stream';
+}
+
+/**
+ * Helper: Clean out "[ผลตรวจจาก AI]" and any AI references
+ */
+function cleanAIPrefixes(str) {
+  if (!str || typeof str !== 'string') return str || '';
+  return str.replace(/\[\s*(?:ผลตรวจ|ผลตรวจสอบ|ผลการวิเคราะห์)?\s*(?:จาก|ของ)?\s*(?:AI|ระบบปัญญาประดิษฐ์|เอไอ|ai)\s*\]\s*[:-]?\s*/gi, '')
+            .replace(/\[\s*ผลตรวจจาก\s*AI\s*\]\s*/gi, '')
+            .replace(/\[\s*ผลตรวจ\s*AI\s*\]\s*/gi, '')
+            .replace(/\[\s*จาก\s*AI\s*\]\s*/gi, '')
+            .replace(/AI\s*ตอบ\s*:/gi, 'ผลการตรวจสอบ:')
+            .replace(/\[\s*AI\s*ตอบ\s*\]\s*[:-]?\s*/gi, 'ผลการตรวจสอบ: ')
+            .trim();
 }
 
 
@@ -211,6 +242,10 @@ app.get('/api/status', async (req, res) => {
       return res.status(404).json({ success: false, error: `ไม่พบข้อมูลคำร้องรหัส ${code} ในระบบ` });
     }
 
+    if (request.adminNotes) request.adminNotes = cleanAIPrefixes(request.adminNotes);
+    if (request.engineerNotes) request.engineerNotes = cleanAIPrefixes(request.engineerNotes);
+    if (request.replyDetails) request.replyDetails = cleanAIPrefixes(request.replyDetails);
+
     res.json({ success: true, data: request });
   } catch (err) {
     console.error("Error checking status:", err);
@@ -277,7 +312,13 @@ app.post('/api/auth/verify', async (req, res) => {
 app.get('/api/admin/requests', requireAdmin, async (req, res) => {
   try {
     const requests = await getAllRequests();
-    res.json({ success: true, data: requests });
+    const cleanedRequests = requests.map(r => ({
+      ...r,
+      adminNotes: cleanAIPrefixes(r.adminNotes),
+      engineerNotes: cleanAIPrefixes(r.engineerNotes),
+      replyDetails: cleanAIPrefixes(r.replyDetails)
+    }));
+    res.json({ success: true, data: cleanedRequests });
   } catch (err) {
     res.status(500).json({ success: false, error: "ไม่สามารถดึงข้อมูลคำร้องได้" });
   }
@@ -323,7 +364,7 @@ ${dynamicKbText}
     const fileAttachment = await getFileForGemini(fileLink);
     const aiAnalysis = await callGemini(prompt, systemInstruction, fileAttachment);
 
-    res.json({ success: true, analysis: aiAnalysis });
+    res.json({ success: true, analysis: cleanAIPrefixes(aiAnalysis) });
   } catch (err) {
     console.error("AI Review Error:", err);
     res.status(500).json({ success: false, error: "AI Review เกิดข้อผิดพลาด: " + err.message });
@@ -375,7 +416,7 @@ ${dynamicKbText}
     const fileAttachment = await getFileForGemini(fileLink);
     const aiReply = await callGemini(chatPrompt, systemInstruction, fileAttachment);
 
-    res.json({ success: true, reply: aiReply });
+    res.json({ success: true, reply: cleanAIPrefixes(aiReply) });
   } catch (err) {
     console.error("AI Chat Error:", err);
     res.status(500).json({ success: false, error: "AI Chat เกิดข้อผิดพลาด: " + err.message });
@@ -417,7 +458,7 @@ app.post('/api/admin/ai-autofill', requireAdmin, async (req, res) => {
     const draftText = await callGemini(prompt, systemInstruction);
 
     // Convert newlines to HTML breaks for clean email display
-    const draftHtml = draftText.replace(/\n/g, '<br>');
+    const draftHtml = cleanAIPrefixes(draftText).replace(/\n/g, '<br>');
 
     res.json({ success: true, draftHtml: draftHtml });
   } catch (err) {
@@ -427,13 +468,36 @@ app.post('/api/admin/ai-autofill', requireAdmin, async (req, res) => {
 });
 
 /**
+ * Admin Upload Attachment (for Blueprint replies/recommendations)
+ */
+app.post('/api/admin/upload-attachment', requireAdmin, async (req, res) => {
+  try {
+    const { base64Data, fileName, mimeType } = req.body;
+    if (!base64Data || !fileName) {
+      return res.status(400).json({ success: false, error: "กรุณาระบุข้อมูลไฟล์และชื่อไฟล์ให้ครบถ้วน" });
+    }
+
+    console.log(`📎 [Admin Attachment] Uploading ${fileName} to Drive by ${req.adminEmail}...`);
+    const fileLink = await uploadToDrive(base64Data, fileName, mimeType || detectMimeType(fileName), false);
+
+    res.json({ success: true, url: fileLink, fileName: fileName });
+  } catch (err) {
+    console.error("Attachment Upload Error:", err);
+    res.status(500).json({ success: false, error: "อัปโหลดไฟล์ไม่สำเร็จ: " + err.message });
+  }
+});
+
+/**
  * Admin Send Reply & Record Decision (Threading Reply Email)
  */
 app.post('/api/admin/reply', requireAdmin, async (req, res) => {
   try {
-    const { code, status, adminNotes, engineerNotes, replyHtml } = req.body;
+    const { code, status, adminNotes, engineerNotes, replyHtml, attachments } = req.body;
+    const cleanAdminNotes = cleanAIPrefixes(adminNotes);
+    const cleanEngNotes = cleanAIPrefixes(engineerNotes);
+    const cleanReplyHtml = cleanAIPrefixes(replyHtml);
 
-    if (!code || !status || !replyHtml) {
+    if (!code || !status || !cleanReplyHtml) {
       return res.status(400).json({ success: false, error: "กรุณาระบุข้อมูลผลการตัดสินใจและข้อความตอบกลับให้ครบถ้วน" });
     }
 
@@ -452,14 +516,15 @@ app.post('/api/admin/reply', requireAdmin, async (req, res) => {
       replyHtml,
       request.threadId,
       request.messageId,
-      req.adminEmail
+      req.adminEmail,
+      attachments || []
     );
 
     const fullSentHtml = (replyResult && replyResult.htmlBody) ? replyResult.htmlBody : replyHtml;
 
     // 3. Update status and notes in Google Sheet (including ReplyDetails)
     console.log(`📊 [Admin Reply] Updating database for ${code}...`);
-    await updateRequestDecision(code, status, adminNotes, engineerNotes, request.threadId, request.messageId, req.adminEmail, fullSentHtml);
+    await updateRequestDecision(code, status, cleanAdminNotes, cleanEngNotes, request.threadId, request.messageId, req.adminEmail, fullSentHtml);
 
     res.json({ success: true, message: "บันทึกผลการตัดสินใจและส่งอีเมลตอบกลับเรียบร้อยแล้ว!" });
   } catch (err) {
