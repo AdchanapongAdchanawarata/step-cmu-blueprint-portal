@@ -793,16 +793,20 @@ async function openAIStudioModal(reqId) {
   document.getElementById('studio-status-select').value = req.status === 'รอดำเนินการ' ? 'อนุมัติ' : req.status;
   document.getElementById('studio-admin-notes').value = cleanAIPrefixes(req.adminNotes || '');
   document.getElementById('studio-eng-notes').value = cleanAIPrefixes(req.engineerNotes || '');
-  document.getElementById('studio-reply-editor-area').innerHTML = `
-    <div style="text-align: center; padding: 3rem 1.5rem; color: #64748b;">
-      <div style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
-      <p style="font-size: 1rem; line-height: 1.8; margin: 0;">
-        👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br>
-        <strong style="color: #fbbf24; font-size: 1.05rem;">"⚡ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลตอบกลับด้านขวา ➡️"</strong><br>
-        เพื่อให้ระบบ AI ร่างข้อความอีเมลตอบกลับทางการในนาม STeP CMU ให้อัตโนมัติในช่องนี้
-      </p>
-    </div>
-  `;
+  if (req._aiReplyCache || (req.replyDetails && req.replyDetails.includes('เรียน'))) {
+    document.getElementById('studio-reply-editor-area').innerHTML = req._aiReplyCache || req.replyDetails;
+  } else {
+    document.getElementById('studio-reply-editor-area').innerHTML = `
+      <div style="text-align: center; padding: 3rem 1.5rem; color: #64748b;">
+        <div style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
+        <p style="font-size: 1rem; line-height: 1.8; margin: 0;">
+          👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br>
+          <strong style="color: #fbbf24; font-size: 1.05rem;">"⚡ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลตอบกลับด้านขวา ➡️"</strong><br>
+          เพื่อให้ระบบ AI ร่างข้อความอีเมลตอบกลับทางการในนาม STeP CMU ให้อัตโนมัติในช่องนี้
+        </p>
+      </div>
+    `;
+  }
 
   // Right Pane: Auto-lock contact person to logged-in admin
   setupContactDisplay();
@@ -1023,19 +1027,25 @@ async function handleStudioGenerateReply() {
     });
     const data = await res.json();
     if (data.success) {
+      selectedRequestForAI._aiReplyCache = data.draftHtml;
       editorArea.innerHTML = data.draftHtml;
     } else {
-      let errHtml = `<p style="color:#f87171; text-align:center;">❌ ไม่สามารถร่างข้อความได้: ${data.error}</p>`;
-      if (data.error && (data.error.includes("โควต้า") || data.error.includes("429") || data.error.includes("EXHAUSTED") || data.error.includes("limit"))) {
+      let errHtml = `<div style="padding: 1rem; text-align: center;"><p style="color:#f87171;">❌ ไม่สามารถร่างข้อความได้: ${data.error}</p><button onclick="handleStudioGenerateReply()" class="btn btn-warning" style="margin-top:10px; padding:6px 16px; cursor:pointer;">⚡ ลองร่างใหม่อีกครั้ง</button></div>`;
+      if (data.error && (data.error.includes("โควต้า") || data.error.includes("429") || data.error.includes("EXHAUSTED") || data.error.includes("limit") || data.error.includes("ติดเพดาน"))) {
         errHtml = `<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 1rem;">
-          <h4 style="color: #f87171; font-size: 1.2rem; margin-bottom: 10px;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) หมดชั่วคราว</h4>
-          <p style="color: #ffffff; line-height: 1.6; margin-bottom: 10px;">โควต้าการประมวลผลฟรีต่อวัน/ต่อนาที ของ Gemini 2.5 Flash เต็มตามลิมิตแล้วครับ</p>
+          <h4 style="color: #f87171; font-size: 1.15rem; margin-bottom: 10px;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) หนาแน่นชั่วคราว</h4>
+          <p style="color: #ffffff; line-height: 1.6; font-size: 0.9rem; margin-bottom: 12px;">ระบบได้สลับรุ่น AI ไปยัง 8 โมเดลสำรองแล้วแต่เพดานรายนาทีของ Google API กำลังหนาแน่น กรุณารอประมาณ 30-60 วินาที<br>(🚫 ห้ามเปิดใช้งานแบบเสียเงินตามข้อสั่งการวิศวกร)</p>
+          <button onclick="handleStudioGenerateReply()" class="btn btn-warning" style="padding: 8px 20px; font-size: 0.95rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);">⚡ ลองให้ AI เรียบเรียงร่างอีเมลใหม่อีกครั้ง (Retry & Switch Model)</button>
         </div>`;
       }
       editorArea.innerHTML = errHtml;
     }
   } catch (err) {
-    editorArea.innerHTML = `<p style="color:#f87171; text-align:center;">ข้อผิดพลาดในการเชื่อมต่อ AI</p>`;
+    editorArea.innerHTML = `
+      <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 1rem;">
+        <p style="color:#f87171; font-weight: bold;">ข้อผิดพลาดในการเชื่อมต่อระบบ AI ด้านขวา</p>
+        <button onclick="handleStudioGenerateReply()" class="btn btn-warning" style="margin-top:10px; padding:8px 18px; font-weight: 600; cursor:pointer;">⚡ ลองเชื่อมต่อเพื่อร่างอีเมลใหม่</button>
+      </div>`;
   }
 }
 

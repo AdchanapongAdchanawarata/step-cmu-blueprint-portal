@@ -103,7 +103,16 @@ try {
  * Helper: Call Gemini with Automatic Fallback Models (Free Tier Multi-Model Resiliency)
  */
 async function callGemini(prompt, systemInstruction = "", fileAttachment = null) {
-  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+  const modelsToTry = [
+    "gemini-2.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-flash-latest",
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-pro-latest"
+  ];
   const parts = [{ text: prompt }];
   
   if (fileAttachment && fileAttachment.data && fileAttachment.mimeType) {
@@ -141,11 +150,11 @@ async function callGemini(prompt, systemInstruction = "", fileAttachment = null)
       if (!res.ok) {
         const errText = await res.text();
         lastErrorText = errText;
-        if (res.status === 429 || errText.includes("RESOURCE_EXHAUSTED") || errText.includes("quota") || errText.includes("limit")) {
+        if (res.status === 429 || res.status === 404 || errText.includes("RESOURCE_EXHAUSTED") || errText.includes("quota") || errText.includes("limit") || errText.includes("not found")) {
           isRateLimit = true;
-          console.warn(`⚠️ Model ${model} hit rate/quota limit (429). Waiting 2s before falling back to next model...`);
-          await new Promise(r => setTimeout(r, 2000));
-          continue; // Try next fallback model!
+          console.warn(`⚠️ Model ${model} hit limit or not available (${res.status}). Switching immediately to next fallback model...`);
+          await new Promise(r => setTimeout(r, 300));
+          continue; // Try next fallback model instantly!
         }
         throw new Error(`Gemini API Error (${res.status}): ${errText}`);
       }
@@ -154,16 +163,16 @@ async function callGemini(prompt, systemInstruction = "", fileAttachment = null)
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่สามารถสร้างข้อความได้ในขณะนี้";
       return text;
     } catch (err) {
-      if (!isRateLimit) {
-        console.error(`Gemini API Error on ${model}:`, err);
-        if (model === modelsToTry[modelsToTry.length - 1]) throw err;
+      console.warn(`Gemini API attempt failed on ${model}: ${err.message}`);
+      if (model === modelsToTry[modelsToTry.length - 1] && !isRateLimit) {
+        throw err;
       }
     }
   }
 
   // If we reach here, all fallback models were rate limited or exhausted
   if (isRateLimit) {
-    throw new Error("⏳ โควต้าการใช้งาน AI ฟรีของ Gemini (Free Tier) หมดลงแล้วหรือใช้งานถี่เกินไปในทุกโมเดล (15 ครั้ง/นาที หรือ 1,500 ครั้ง/วัน)! กรุณารอประมาณ 1-2 นาทีหากเป็นโควต้ารายนาที หรือรอรีเซ็ตโควต้าใหม่เวลา 14:00 น. ของทุกวัน (🚫 ห้ามเปิดใช้งานแบบเสียเงินโดยเด็ดขาดตามข้อสั่งการวิศวกร)");
+    throw new Error("⏳ โควต้าการใช้งาน AI ฟรีของ Gemini (Free Tier) ในทุกโมเดล (8 รุ่นทั้ง Lite/Flash/Pro) ติดเพดานการใช้งานชั่วคราว! กรุณารอประมาณ 30-60 วินาทีหากเป็นโควต้ารายนาที หรือรอรีเซ็ตโควต้าใหม่เวลา 14:00 น. ของทุกวัน (🚫 ห้ามเปิดใช้งานแบบเสียเงินโดยเด็ดขาดตามข้อสั่งการวิศวกร)");
   }
   throw new Error(`Gemini API Error across all fallback models: ${lastErrorText}`);
 }
