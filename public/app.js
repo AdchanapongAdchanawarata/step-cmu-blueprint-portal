@@ -809,7 +809,53 @@ async function openAIStudioModal(reqId) {
 
   modal.classList.add('active');
 
-  // Trigger AI Review automatically
+  // Check if we already have a cached AI review in notes or state
+  const existingNote = (req.adminNotes || '') + '\n' + (req.engineerNotes || '');
+  if (req._aiAnalysisCache || existingNote.includes('[ผลตรวจจาก AI]') || existingNote.includes('สรุปภาพรวมโครงการ') || existingNote.includes('การตรวจสอบตามกฎหมาย')) {
+    const loadingElem = document.getElementById('studio-review-loading');
+    if (loadingElem) loadingElem.remove();
+
+    const cachedText = req._aiAnalysisCache || cleanAIPrefixes(req.adminNotes || req.engineerNotes || 'พบผลตรวจเดิมในระบบ');
+    const formatted = formatMarkdownToHtml(cachedText);
+    chatFeed.innerHTML += `
+      <div style="align-self: flex-start; background: rgba(15, 23, 42, 0.95); border: 1px solid #38bdf8; color: #e2e8f0; padding: 16px 20px; border-radius: 12px 12px 12px 2px; max-width: 95%; font-size: 0.95rem; line-height: 1.7; box-shadow: 0 6px 20px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span style="color: #38bdf8; font-weight: bold; font-size: 1rem;">⚡ โหลดผลวิเคราะห์เดิมจากฐานข้อมูล (Cached AI Review):</span>
+            <span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">ประหยัดโควต้า AI 100%</span>
+          </div>
+          <button onclick="triggerStudioAIReviewForce('${req.requestID}')" class="btn btn-xs" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">🔄 สั่งวิเคราะห์ใหม่ (Re-analyze)</button>
+        </div>
+        <div id="studio-review-text">${formatted}</div>
+      </div>
+    `;
+    if (studioChatHistory.length === 0) {
+      studioChatHistory.push({ role: 'ai', text: cachedText });
+    }
+  } else {
+    // No cache found -> Trigger AI Review automatically
+    triggerStudioAIReviewForce(req.requestID);
+  }
+}
+
+async function triggerStudioAIReviewForce(reqId) {
+  const req = currentRequests.find(r => String(r.requestID || r.code || r.id) === String(reqId));
+  if (!req) return;
+  const chatFeed = document.getElementById('studio-chat-feed');
+  if (!chatFeed) return;
+
+  // Remove old error/loading messages if re-triggering
+  const oldLoading = document.getElementById('studio-review-loading');
+  if (oldLoading) oldLoading.remove();
+
+  chatFeed.innerHTML += `
+    <div id="studio-review-loading" style="align-self: flex-start; background: rgba(30,41,59,0.9); border: 1px solid #f59e0b; color: #fbbf24; padding: 14px 18px; border-radius: 12px 12px 12px 2px; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); max-width: 95%;">
+      <div class="spinner" style="width:22px; height:22px; flex-shrink:0;"></div>
+      <span><strong>🤖 AI ผู้ช่วยวิศวกร (Multi-Model Resiliency):</strong> กำลังวิเคราะห์แบบแปลน วัสดุ และข้อกฎหมายด้วยโมเดล Gemini...</span>
+    </div>
+  `;
+  chatFeed.scrollTop = chatFeed.scrollHeight;
+
   try {
     const res = await fetch(`${API_BASE}/api/admin/ai-review`, {
       method: 'POST',
@@ -827,12 +873,16 @@ async function openAIStudioModal(reqId) {
     if (loadingElem) loadingElem.remove();
 
     if (data.success) {
+      req._aiAnalysisCache = data.analysis;
       const formatted = formatMarkdownToHtml(data.analysis);
       chatFeed.innerHTML += `
         <div style="align-self: flex-start; background: rgba(15, 23, 42, 0.95); border: 1px solid #34d399; color: #e2e8f0; padding: 16px 20px; border-radius: 12px 12px 12px 2px; max-width: 95%; font-size: 0.95rem; line-height: 1.7; box-shadow: 0 6px 20px rgba(0,0,0,0.5);">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(52, 211, 153, 0.3); padding-bottom: 8px; margin-bottom: 12px;">
-            <span style="color: #34d399; font-weight: bold; font-size: 1rem;">🤖 สรุปผลการตรวจสอบและคำถามชวนคิดเพื่อการหารือ (AI Summary & Discussion Prompt):</span>
-            <span style="font-size: 0.75rem; background: rgba(52, 211, 153, 0.2); color: #34d399; padding: 2px 8px; border-radius: 4px;">พร้อมหารือ</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(52, 211, 153, 0.3); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <span style="color: #34d399; font-weight: bold; font-size: 1rem;">🤖 สรุปผลการตรวจสอบและคำถามชวนคิดเพื่อการหารือ (AI Summary & Discussion Prompt):</span>
+              <span style="font-size: 0.75rem; background: rgba(52, 211, 153, 0.2); color: #34d399; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">พร้อมหารือ</span>
+            </div>
+            <button onclick="triggerStudioAIReviewForce('${req.requestID}')" class="btn btn-xs" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">🔄 สั่งวิเคราะห์ใหม่</button>
           </div>
           <div id="studio-review-text">${formatted}</div>
         </div>
@@ -844,7 +894,8 @@ async function openAIStudioModal(reqId) {
         errHtml = `
         <div style="align-self: flex-start; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 16px; border-radius: 10px; text-align: center; max-width: 95%;">
           <strong style="color: #f87171; font-size: 1rem;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) เต็มชั่วคราว</strong><br>
-          <span style="color: #34d399; font-size: 0.85rem; margin-top: 6px; display: block;">รอประมาณ 1-2 นาที หรือรอรีเซ็ต 14:00 น. ครับ (ห้ามเปิดใช้ระบบเสียเงินตามข้อสั่งการวิศวกร)<br>ท่านสามารถพิมพ์สนทนาหรือหารือในช่องแชทด้านล่างต่อได้ครับ</span>
+          <span style="color: #34d399; font-size: 0.85rem; margin-top: 6px; display: block;">ระบบได้สลับรุ่น AI ทั้งหมดแล้วแต่เพดานรายนาทียังหนาแน่น กรุณารอ 1-2 นาที หรือรอรีเซ็ต 14:00 น.<br>(🚫 ห้ามเปิดใช้ระบบเสียเงินตามข้อสั่งการวิศวกร)</span>
+          <button onclick="triggerStudioAIReviewForce('${req.requestID}')" class="btn btn-warning" style="margin-top: 12px; padding: 8px 18px; font-size: 0.9rem; font-weight: 600; cursor: pointer;">🔄 ลองวิเคราะห์ด้วย AI อีกครั้ง (Retry & Switch Model)</button>
         </div>`;
       }
       chatFeed.innerHTML += errHtml;
@@ -853,7 +904,11 @@ async function openAIStudioModal(reqId) {
   } catch (err) {
     const loadingElem = document.getElementById('studio-review-loading');
     if (loadingElem) loadingElem.remove();
-    chatFeed.innerHTML += `<div style="align-self: flex-start; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 12px 16px; border-radius: 8px; color: #f87171; font-size: 0.9rem;">❌ ไม่สามารถเชื่อมต่อระบบ AI ได้ในขณะนี้</div>`;
+    chatFeed.innerHTML += `
+      <div style="align-self: flex-start; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 14px 18px; border-radius: 10px; text-align: center; max-width: 95%;">
+        <strong style="color: #f87171; font-size: 0.95rem;">❌ ไม่สามารถเชื่อมต่อระบบ AI ได้ในขณะนี้</strong><br>
+        <button onclick="triggerStudioAIReviewForce('${req.requestID}')" class="btn btn-warning" style="margin-top: 10px; padding: 6px 14px; font-size: 0.85rem; cursor: pointer;">🔄 ลองเชื่อมต่อใหม่</button>
+      </div>`;
     chatFeed.scrollTop = chatFeed.scrollHeight;
   }
 }
