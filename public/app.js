@@ -69,6 +69,11 @@ function setupNavigation() {
 }
 
 function switchView(viewId, updateHash = true) {
+  // Close any lingering modals when switching views to prevent hit-testing bugs
+  document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+    modal.classList.remove('active');
+  });
+
   // Check auth for admin views
   if ((viewId === 'view-admin-dashboard' || viewId === 'view-admin-kb') && !isLoggedIn()) {
     showNotification("กรุณาเข้าสู่ระบบสำหรับเจ้าหน้าที่ก่อนใช้งาน", "warning");
@@ -160,13 +165,19 @@ function checkLoginState() {
   const kbBtn = document.getElementById('nav-admin-kb') || document.querySelector('.nav-btn[data-view="view-admin-kb"]');
 
   if (isLoggedIn() && adminEmail) {
-    if (userDisplay) userDisplay.innerHTML = `👤 <strong>${adminEmail}</strong>`;
+    if (userDisplay) {
+      userDisplay.innerHTML = '';
+      userDisplay.style.display = 'none';
+    }
     if (loginBtn) loginBtn.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'inline-flex';
     if (dashboardBtn) dashboardBtn.style.display = 'inline-flex';
     if (kbBtn) kbBtn.style.display = 'inline-flex';
   } else {
-    if (userDisplay) userDisplay.innerHTML = '';
+    if (userDisplay) {
+      userDisplay.innerHTML = '';
+      userDisplay.style.display = 'none';
+    }
     if (loginBtn) loginBtn.style.display = 'inline-flex';
     if (logoutBtn) logoutBtn.style.display = 'none';
     if (dashboardBtn) dashboardBtn.style.display = 'none';
@@ -336,6 +347,16 @@ function setupEventListeners() {
       }
     });
   }
+
+  // 8. Click outside modal overlay to close (prevents stuck modals)
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      // Only close if clicking the overlay background itself, not its children
+      if (e.target === overlay) {
+        overlay.classList.remove('active');
+      }
+    });
+  });
 }
 
 function updateFileNameDisplay(name, targetId = 'file-name-display') {
@@ -355,9 +376,13 @@ async function handleCitizenSubmit(e) {
   const applicantName = document.getElementById('req-name').value;
   const email = document.getElementById('req-email').value;
   const phone = document.getElementById('req-phone').value;
-  const organization = document.getElementById('req-org').value;
-  const buildingType = document.getElementById('req-type').value;
+  const organizationRaw = document.getElementById('req-org').value;
+  const buildingTypeRaw = document.getElementById('req-type').value;
+  const notes = document.getElementById('req-notes')?.value.trim() || '';
   const fileInput = document.getElementById('file-blueprint');
+
+  const buildingType = notes ? `${buildingTypeRaw} (รายละเอียด: ${notes})` : buildingTypeRaw;
+  const organization = notes ? `${organizationRaw ? organizationRaw + ' ' : ''}(รายละเอียด/วัตถุประสงค์: ${notes})` : organizationRaw;
 
   if (!fileInput.files || fileInput.files.length === 0) {
     showNotification("กรุณาแนบไฟล์เอกสารแบบแปลน (PDF, JPG, PNG)", "error");
@@ -646,20 +671,20 @@ function renderAdminTable(requests) {
           ${r.respondedBy ? `<br><span style="font-size:0.75rem; color:#f59e0b; display:inline-block; margin-top:4px;">👤 ${r.respondedBy}</span>` : ''}
         </td>
         <td>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button class="btn btn-accent" style="padding: 8px 16px; font-size:0.85rem; display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="openAIStudioModal('${r.requestID}')">
-              <span style="font-size: 1.1rem;">🚀</span>
-              <div style="text-align: left; line-height: 1.2;">
-                <strong style="display: block; font-size: 0.85rem; color: #fff;">AI Blueprint Studio</strong>
-                <span style="font-size: 0.7rem; color: #fef3c7;">ตรวจแปลน & ร่างคำตอบ (ซ้าย-ขวา)</span>
+          <div style="display: flex; flex-direction: column; gap: 8px; min-width: 170px;">
+            <button class="btn btn-primary btn-sm" style="width: 100%; justify-content: flex-start; text-align: left; padding: 10px 14px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);" onclick="openAIStudioModal('${r.requestID}')">
+              <span style="font-size: 1.2rem; flex-shrink: 0;">🚀</span>
+              <div style="line-height: 1.25; overflow: hidden;">
+                <strong style="display: block; font-size: 0.85rem; color: #ffffff; white-space: nowrap; text-overflow: ellipsis;">AI Blueprint Studio</strong>
+                <span style="font-size: 0.72rem; color: #fef3c7; display: block; white-space: nowrap; text-overflow: ellipsis;">ตรวจแปลน & ร่างคำตอบ</span>
               </div>
             </button>
-            ${r.status !== 'รอดำเนินการ' ? `
-            <button class="btn" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;" onclick="viewReplyDetails('${r.requestID}')">
-              <span>👁️</span> ดูรายละเอียดตอบกลับ
+            ${r.status !== 'รอดำเนินการ' || r.replyDetails ? `
+            <button class="btn btn-secondary btn-xs" style="width: 100%; justify-content: flex-start; text-align: left; padding: 6px 10px;" onclick="viewReplyDetails('${r.requestID}')">
+              <span style="font-size: 0.95rem;">📁</span> <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">ดูเอกสาร/ประวัติคำตอบ</span>
             </button>` : ''}
-            <button class="btn" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;" onclick="confirmDeleteRequest('${r.requestID}')">
-              <span>🗑️</span> ลบรายการ
+            <button class="btn btn-danger-ghost btn-xs" style="width: 100%; justify-content: flex-start; text-align: left; padding: 6px 10px;" onclick="confirmDeleteRequest('${r.requestID}')">
+              <span style="font-size: 0.95rem;">🗑️</span> <span>ลบรายการ</span>
             </button>
           </div>
         </td>
@@ -741,8 +766,8 @@ async function openAIStudioModal(reqId) {
   const bpName = document.getElementById('studio-blueprint-name');
   const bpLink = document.getElementById('studio-blueprint-link');
   if (req.fileLink) {
-    bpName.innerHTML = `📄 <a href="${req.fileLink}" target="_blank" style="color: #38bdf8; text-decoration: underline;">ไฟล์แปลน/เอกสารแนบของโครงการ (คลิกเพื่อดู)</a>`;
-    bpLink.href = req.fileLink;
+    bpName.innerHTML = `📄 <span style="color: #cbd5e1; font-weight: 500;">เอกสารแบบแปลนโครงการ (${req.requestID || 'REQ'})</span>`;
+    bpLink.onclick = () => openBlueprintViewer(req.fileLink, req.requestID || '');
     bpLink.style.display = 'inline-flex';
   } else {
     bpName.innerHTML = `<span style="color: #f87171;">❌ ไม่ได้แนบไฟล์แปลน</span>`;
@@ -768,7 +793,16 @@ async function openAIStudioModal(reqId) {
   document.getElementById('studio-status-select').value = req.status === 'รอดำเนินการ' ? 'อนุมัติ' : req.status;
   document.getElementById('studio-admin-notes').value = cleanAIPrefixes(req.adminNotes || '');
   document.getElementById('studio-eng-notes').value = cleanAIPrefixes(req.engineerNotes || '');
-  document.getElementById('studio-reply-editor-area').innerHTML = `<p style="color: #64748b; text-align: center; padding-top: 3rem;">👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br><strong style="color: #f59e0b;">"➡️ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลด้านขวา"</strong><br> เพื่อให้ AI ร่างข้อความอีเมลตอบกลับทางการให้อัตโนมัติในช่องนี้</p>`;
+  document.getElementById('studio-reply-editor-area').innerHTML = `
+    <div style="text-align: center; padding: 3rem 1.5rem; color: #64748b;">
+      <div style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
+      <p style="font-size: 1rem; line-height: 1.8; margin: 0;">
+        👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br>
+        <strong style="color: #fbbf24; font-size: 1.05rem;">"⚡ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลตอบกลับด้านขวา ➡️"</strong><br>
+        เพื่อให้ระบบ AI ร่างข้อความอีเมลตอบกลับทางการในนาม STeP CMU ให้อัตโนมัติในช่องนี้
+      </p>
+    </div>
+  `;
 
   // Right Pane: Auto-lock contact person to logged-in admin
   setupContactDisplay();
@@ -810,7 +844,7 @@ async function openAIStudioModal(reqId) {
         errHtml = `
         <div style="align-self: flex-start; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 16px; border-radius: 10px; text-align: center; max-width: 95%;">
           <strong style="color: #f87171; font-size: 1rem;">⚠️ โควต้าการใช้งาน AI ฟรี (Gemini Free Tier) เต็มชั่วคราว</strong><br>
-          <span style="color: #34d399; font-size: 0.85rem; margin-top: 6px; display: block;">รอประมาณ 1-2 นาที หรือรอรีเซ็ต 14:00 น. ครับ (ห้ามเปิดใช้ระบบเสียเงินตามข้อสั่งการผู้บริหาร)<br>ท่านสามารถพิมพ์สนทนาหรือหารือในช่องแชทด้านล่างต่อได้ครับ</span>
+          <span style="color: #34d399; font-size: 0.85rem; margin-top: 6px; display: block;">รอประมาณ 1-2 นาที หรือรอรีเซ็ต 14:00 น. ครับ (ห้ามเปิดใช้ระบบเสียเงินตามข้อสั่งการวิศวกร)<br>ท่านสามารถพิมพ์สนทนาหรือหารือในช่องแชทด้านล่างต่อได้ครับ</span>
         </div>`;
       }
       chatFeed.innerHTML += errHtml;
@@ -1055,6 +1089,159 @@ function renderStudioAttachments() {
   `).join('');
 }
 
+let quickUploadFilesList = [];
+
+function openQuickUploadModal(preselectReqId = '') {
+  const modal = document.getElementById('modal-quick-upload');
+  const selectEl = document.getElementById('quick-upload-req-select');
+  const listEl = document.getElementById('quick-upload-list');
+  const statusEl = document.getElementById('quick-upload-status');
+  
+  if (statusEl) {
+    statusEl.style.display = 'none';
+    statusEl.innerHTML = '';
+  }
+  
+  if (selectEl) {
+    let optionsHtml = '<option value="">-- ไม่ระบุ / อัปโหลดเป็นเอกสารแนะนำคลังกลาง --</option>';
+    currentRequests.forEach(r => {
+      const selected = (r.requestID === preselectReqId) ? 'selected' : '';
+      optionsHtml += `<option value="${r.requestID}" ${selected}>[${r.requestID}] คุณ ${r.applicantName} (${r.status})</option>`;
+    });
+    selectEl.innerHTML = optionsHtml;
+  }
+  
+  if (listEl) {
+    if (quickUploadFilesList.length === 0) {
+      listEl.innerHTML = `<span style="font-size: 0.8rem; color: #64748b; font-style: italic; text-align: center; padding: 10px;">ยังไม่มีไฟล์ที่อัปโหลดในรอบนี้</span>`;
+    } else {
+      renderQuickUploadList();
+    }
+  }
+  
+  if (modal) modal.classList.add('active');
+}
+
+function closeQuickUploadModal() {
+  const modal = document.getElementById('modal-quick-upload');
+  if (modal) modal.classList.remove('active');
+}
+
+async function handleQuickUploadFiles(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  
+  const selectEl = document.getElementById('quick-upload-req-select');
+  const targetReqId = selectEl ? selectEl.value : '';
+  const statusEl = document.getElementById('quick-upload-status');
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    showNotification(`⏳ กำลังอัปโหลด ${file.name} ไปยังคลังเก็บไฟล์ (Google Drive)...`, "info");
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Data = e.target.result;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/upload-attachment`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              base64Data: base64Data,
+              fileName: file.name,
+              mimeType: file.type || ''
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            quickUploadFilesList.push({
+              name: file.name,
+              url: data.url,
+              reqId: targetReqId,
+              time: new Date().toLocaleTimeString('th-TH')
+            });
+            renderQuickUploadList();
+            
+            if (statusEl) {
+              statusEl.style.display = 'block';
+              statusEl.innerHTML = `✅ อัปโหลดไฟล์ <strong>${file.name}</strong> สำเร็จเรียบร้อยแล้ว!`;
+            }
+            showNotification(`✅ อัปโหลด ${file.name} สำเร็จ!`, "success");
+          } else {
+            showNotification(`❌ อัปโหลด ${file.name} ไม่สำเร็จ: ${data.error}`, "error");
+          }
+        } catch (err) {
+          showNotification(`❌ ข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ขณะอัปโหลด ${file.name}`, "error");
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      showNotification(`❌ ไม่สามารถอ่านไฟล์ ${file.name} ได้`, "error");
+    }
+  }
+  event.target.value = '';
+}
+
+function renderQuickUploadList() {
+  const listEl = document.getElementById('quick-upload-list');
+  if (!listEl) return;
+  if (quickUploadFilesList.length === 0) {
+    listEl.innerHTML = `<span style="font-size: 0.8rem; color: #64748b; font-style: italic; text-align: center; padding: 10px;">ยังไม่มีไฟล์ที่อัปโหลดในรอบนี้</span>`;
+    return;
+  }
+  
+  listEl.innerHTML = quickUploadFilesList.map((f, idx) => `
+    <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid #38bdf8; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.2rem;">📎</span>
+        <div>
+          <a href="${f.url}" target="_blank" style="color: #38bdf8; font-weight: bold; text-decoration: underline; font-size: 0.9rem;">${f.name}</a>
+          <div style="font-size: 0.75rem; color: #94a3b8;">
+            ${f.reqId ? `📌 อ้างอิง: ${f.reqId}` : '🌐 คลังไฟล์กลาง'} • 🕒 ${f.time}
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button type="button" class="btn btn-secondary btn-xs" onclick="copyToClipboard('${f.url}', 'คัดลอกลิงก์ดาวน์โหลดเรียบร้อย!')">
+          <span>📋</span> คัดลอกลิงก์
+        </button>
+        <button type="button" class="btn btn-danger-ghost btn-xs" onclick="quickUploadFilesList.splice(${idx}, 1); renderQuickUploadList();">
+          &times;
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function copyToClipboard(text, successMsg = 'คัดลอกเรียบร้อยแล้ว!') {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showNotification("📋 " + successMsg, "success");
+    }).catch(() => {
+      fallbackCopyTextToClipboard(text, successMsg);
+    });
+  } else {
+    fallbackCopyTextToClipboard(text, successMsg);
+  }
+}
+
+function fallbackCopyTextToClipboard(text, successMsg) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showNotification("📋 " + successMsg, "success");
+  } catch (err) {
+    showNotification("❌ ไม่สามารถคัดลอกข้อความได้", "error");
+  }
+  document.body.removeChild(textArea);
+}
+
 /**
  * 7. Knowledge Base Manager
  */
@@ -1190,14 +1377,26 @@ function formatMarkdownToHtml(markdown) {
     .replace(/\n/gim, '<br>');
 }
 
+let _loadingModalTimeout = null;
+
 function showLoadingModal(text) {
   const modal = document.getElementById('modal-loading');
   const textSpan = document.getElementById('loading-text');
   if (textSpan) textSpan.textContent = text || "กำลังดำเนินการ...";
   if (modal) modal.classList.add('active');
+  
+  // Safety: auto-hide after 30 seconds to prevent stuck loading overlay
+  if (_loadingModalTimeout) clearTimeout(_loadingModalTimeout);
+  _loadingModalTimeout = setTimeout(() => {
+    hideLoadingModal();
+  }, 30000);
 }
 
 function hideLoadingModal() {
+  if (_loadingModalTimeout) {
+    clearTimeout(_loadingModalTimeout);
+    _loadingModalTimeout = null;
+  }
   const modal = document.getElementById('modal-loading');
   if (modal) modal.classList.remove('active');
 }
@@ -1409,6 +1608,20 @@ function viewReplyDetails(reqId) {
               ${contentHtml}
             </div>
             ${engNotesSection}
+            ${r.attachments && r.attachments.length > 0 ? `
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #cbd5e1;">
+              <strong style="color: #0284c7; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                <span>📎</span> เอกสารแนบและไฟล์แนะนำจากเจ้าหน้าที่ (Attachments):
+              </strong>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                ${r.attachments.map(att => `
+                  <a href="${att.url}" target="_blank" style="background: #e0f2fe; border: 1px solid #0284c7; color: #0369a1; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>📥</span> ${att.name}
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
           </div>
 
           ${adminContactSection}
@@ -1663,4 +1876,238 @@ function openAnalyticsModal() {
 function closeAnalyticsModal() {
   const modal = document.getElementById('modal-analytics');
   if (modal) modal.classList.remove('active');
+}
+
+/* ==========================================
+ * FLOATING BLUEPRINT VIEWER POPUP (DRAGGABLE & ZOOMABLE)
+ * ========================================== */
+let currentBlueprintZoom = 1.0;
+let currentBlueprintPanX = 0;
+let currentBlueprintPanY = 0;
+let currentBlueprintUrl = '';
+let isDraggingViewer = false;
+let dragStartX = 0, dragStartY = 0;
+let initialTop = 0, initialLeft = 0;
+let isPanToolActive = true;
+let isPanningViewer = false;
+let panStartX = 0, panStartY = 0;
+
+function toggleBlueprintPanTool(forceState) {
+  if (typeof forceState === 'boolean') {
+    isPanToolActive = forceState;
+  } else {
+    isPanToolActive = !isPanToolActive;
+  }
+  const btn = document.getElementById('blueprint-tool-pan');
+  const txt = document.getElementById('pan-tool-text');
+  const overlay = document.getElementById('blueprint-pan-overlay');
+  const body = document.getElementById('blueprint-viewer-body');
+
+  if (isPanToolActive) {
+    if (btn) {
+      btn.style.background = '#fbbf24';
+      btn.style.color = '#0f172a';
+      btn.style.borderColor = '#f59e0b';
+      btn.style.boxShadow = '0 0 12px rgba(251,191,36,0.4)';
+    }
+    if (txt) txt.innerText = 'เลื่อนแปลน (ON)';
+    if (overlay) overlay.style.display = 'block';
+    if (body) body.style.cursor = 'grab';
+  } else {
+    if (btn) {
+      btn.style.background = '#334155';
+      btn.style.color = '#cbd5e1';
+      btn.style.borderColor = '#475569';
+      btn.style.boxShadow = 'none';
+    }
+    if (txt) txt.innerText = 'เลื่อนแปลน (OFF)';
+    if (overlay) overlay.style.display = 'none';
+    if (body) body.style.cursor = 'default';
+  }
+}
+
+function updateBlueprintTransform() {
+  const container = document.getElementById('blueprint-zoom-container');
+  if (container) {
+    container.style.transform = `translate(${currentBlueprintPanX}px, ${currentBlueprintPanY}px) scale(${currentBlueprintZoom})`;
+  }
+}
+
+function openBlueprintViewer(url, reqId = '') {
+  const targetUrl = url || window.currentBlueprintUrl;
+  if (!targetUrl) return;
+  window.currentBlueprintUrl = targetUrl;
+  currentBlueprintZoom = 1.0;
+  currentBlueprintPanX = 0;
+  currentBlueprintPanY = 0;
+
+  const popup = document.getElementById('blueprint-viewer-popup');
+  const title = document.getElementById('blueprint-viewer-title');
+  const container = document.getElementById('blueprint-zoom-container');
+  const external = document.getElementById('blueprint-viewer-external');
+
+  if (title) {
+    title.innerText = reqId ? `ตรวจสอบแบบแปลนโครงการ: ${reqId}` : `ตรวจสอบแบบแปลนโครงการ`;
+  }
+  if (external) {
+    external.href = targetUrl;
+  }
+  if (container) {
+    let embedHtml = '';
+    if (targetUrl.includes('drive.google.com') || targetUrl.includes('file/d/')) {
+      let previewUrl = targetUrl.replace('/view?usp=sharing', '/preview').replace('/view', '/preview');
+      if (!previewUrl.includes('/preview') && targetUrl.includes('/file/d/')) {
+        const match = targetUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (match) previewUrl = `https://drive.google.com/file/d/${match[1]}/preview`;
+      }
+      embedHtml = `<iframe id="blueprint-zoom-iframe" src="${previewUrl}" style="width: 100%; min-width: 900px; height: 750px; border: none; background: #1e293b; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" allow="autoplay"></iframe>`;
+    } else if (targetUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i) || targetUrl.startsWith('data:image/')) {
+      embedHtml = `<img id="blueprint-zoom-img" src="${targetUrl}" style="max-width: none; width: 850px; height: auto; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); user-select: none; pointer-events: none;" alt="Blueprint Image">`;
+    } else {
+      embedHtml = `<iframe id="blueprint-zoom-iframe" src="${targetUrl}" style="width: 100%; min-width: 900px; height: 750px; border: none; background: #1e293b; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"></iframe>`;
+    }
+    container.innerHTML = embedHtml;
+  }
+
+  const zoomLevel = document.getElementById('blueprint-viewer-zoom-level');
+  if (zoomLevel) zoomLevel.innerText = '100%';
+
+  toggleBlueprintPanTool(true);
+  updateBlueprintTransform();
+
+  if (popup) {
+    popup.style.display = 'flex';
+    const winWidth = window.innerWidth;
+    const winHeight = window.innerHeight;
+    const popWidth = Math.min(950, winWidth * 0.85);
+    const popHeight = Math.min(680, winHeight * 0.85);
+    popup.style.width = `${popWidth}px`;
+    popup.style.height = `${popHeight}px`;
+    popup.style.left = `${Math.max(20, (winWidth - popWidth) / 2)}px`;
+    popup.style.top = `${Math.max(20, (winHeight - popHeight) / 2)}px`;
+    
+    initBlueprintViewerDragging();
+    initBlueprintViewerPanning();
+  }
+}
+
+function closeBlueprintViewer() {
+  const popup = document.getElementById('blueprint-viewer-popup');
+  if (popup) {
+    popup.style.display = 'none';
+  }
+  const container = document.getElementById('blueprint-zoom-container');
+  if (container) container.innerHTML = '';
+}
+
+function zoomBlueprint(delta) {
+  currentBlueprintZoom += delta;
+  if (currentBlueprintZoom < 0.25) currentBlueprintZoom = 0.25;
+  if (currentBlueprintZoom > 5.0) currentBlueprintZoom = 5.0;
+  updateBlueprintTransform();
+  const zoomDisplay = document.getElementById('blueprint-viewer-zoom-level');
+  if (zoomDisplay) {
+    zoomDisplay.innerText = `${Math.round(currentBlueprintZoom * 100)}%`;
+  }
+}
+
+function resetZoomBlueprint() {
+  currentBlueprintZoom = 1.0;
+  currentBlueprintPanX = 0;
+  currentBlueprintPanY = 0;
+  updateBlueprintTransform();
+  const zoomDisplay = document.getElementById('blueprint-viewer-zoom-level');
+  if (zoomDisplay) {
+    zoomDisplay.innerText = `100%`;
+  }
+}
+
+function initBlueprintViewerDragging() {
+  const header = document.getElementById('blueprint-viewer-header');
+  const popup = document.getElementById('blueprint-viewer-popup');
+  if (!header || !popup) return;
+
+  header.onmousedown = function(e) {
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    isDraggingViewer = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    const rect = popup.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    popup.style.left = `${initialLeft}px`;
+    popup.style.top = `${initialTop}px`;
+    popup.style.bottom = 'auto';
+    popup.style.right = 'auto';
+    header.style.cursor = 'grabbing';
+  };
+
+  document.onmousemove = function(e) {
+    if (!isDraggingViewer) return;
+    e.preventDefault();
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+    const pop = document.getElementById('blueprint-viewer-popup');
+    if (pop) {
+      pop.style.left = `${initialLeft + dx}px`;
+      pop.style.top = `${initialTop + dy}px`;
+    }
+  };
+
+  document.onmouseup = function() {
+    if (isDraggingViewer) {
+      isDraggingViewer = false;
+      const head = document.getElementById('blueprint-viewer-header');
+      if (head) head.style.cursor = 'move';
+    }
+  };
+}
+
+function initBlueprintViewerPanning() {
+  const viewerBody = document.getElementById('blueprint-viewer-body');
+  const overlay = document.getElementById('blueprint-pan-overlay');
+  if (!viewerBody) return;
+
+  const handleMouseDown = function(e) {
+    if (!isPanToolActive) return;
+    if (e.target.closest('#blueprint-viewer-header')) return;
+    isPanningViewer = true;
+    viewerBody.style.cursor = 'grabbing';
+    if (overlay) overlay.style.cursor = 'grabbing';
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+  };
+
+  const handleMouseMove = function(e) {
+    if (!isPanningViewer || !isPanToolActive) return;
+    e.preventDefault();
+    const dx = e.clientX - panStartX;
+    const dy = e.clientY - panStartY;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    currentBlueprintPanX += dx;
+    currentBlueprintPanY += dy;
+    updateBlueprintTransform();
+  };
+
+  const handleMouseUp = function() {
+    if (isPanningViewer) {
+      isPanningViewer = false;
+      viewerBody.style.cursor = isPanToolActive ? 'grab' : 'default';
+      if (overlay) overlay.style.cursor = 'grab';
+    }
+  };
+
+  viewerBody.onmousedown = handleMouseDown;
+  if (overlay) overlay.onmousedown = handleMouseDown;
+
+  window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('mouseup', handleMouseUp);
+
+  // Enable wheel zoom over body
+  viewerBody.onwheel = function(e) {
+    e.preventDefault();
+    if (e.deltaY < 0) zoomBlueprint(0.2);
+    else zoomBlueprint(-0.2);
+  };
 }

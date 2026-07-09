@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STeP CMU Blueprint Portal - System Architecture & Workflow Diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-secondary: #111827;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --border-color: rgba(56, 189, 248, 0.3);
+      --accent-cyan: #38bdf8;
+      --accent-gold: #fbbf24;
+      --accent-purple: #a78bfa;
+      --accent-emerald: #34d399;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-main);
+      font-family: 'Prompt', 'Inter', sans-serif;
+      line-height: 1.6;
+      padding: 2rem;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(at 10% 20%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
+        radial-gradient(at 90% 80%, rgba(167, 139, 250, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(251, 191, 36, 0.08) 0px, transparent 60%);
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    /* Top Navigation / Action Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1rem 1.75rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      font-size: 2.2rem;
+      filter: drop-shadow(0 0 10px rgba(56,189,248,0.6));
+    }
+
+    .logo-text h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+    }
+
+    .btn-outline {
+      background: rgba(255,255,255,0.05);
+      color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--accent-cyan);
+    }
+
+    /* Section Title Banner */
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .section-badge {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 2.3rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Architecture Grid Setup */
+    .arch-box {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-bottom: 3.5rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .arch-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #38bdf8, #a78bfa, #fbbf24, #34d399);
+    }
+
+    /* SVG Architecture Layout Card */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-top: 2rem;
+      position: relative;
+    }
+
+    @media (max-width: 1024px) {
+      .arch-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .arch-grid { grid-template-columns: 1fr; }
+    }
+
+    .layer-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: transform 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .layer-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.2);
+    }
+
+    .layer-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .layer-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .layer-subtitle {
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .layer-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      flex: 1;
+    }
+
+    .layer-tech-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: auto;
+    }
+
+    .tech-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: #cbd5e1;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Workflow Steps Timeline */
+    .workflow-timeline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.2rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 1100px) {
+      .workflow-timeline { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .workflow-timeline { grid-template-columns: 1fr; }
+    }
+
+    .step-card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .step-num {
+      position: absolute;
+      top: -14px;
+      left: 20px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 10px rgba(56, 189, 248, 0.5);
+    }
+
+    .step-header {
+      margin-top: 8px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .step-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Highlights Matrix */
+    .highlights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .highlights-grid { grid-template-columns: 1fr; }
+    }
+
+    .highlight-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1.75rem;
+      transition: all 0.25s;
+    }
+
+    .highlight-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: var(--accent-gold);
+      transform: translateY(-4px);
+    }
+
+    .hl-icon {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .hl-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .hl-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Print / PDF Output Styling */
+    @media print {
+      body {
+        background: #0f172a !important;
+        color: #fff !important;
+        padding: 0 !important;
+      }
+      .top-bar .action-buttons {
+        display: none !important;
+      }
+      .arch-box {
+        box-shadow: none !important;
+        margin-bottom: 2rem !important;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo-area">
+        <div class="logo-icon">🏢</div>
+        <div class="logo-text">
+          <h1>STeP CMU Blueprint Portal</h1>
+          <p>System Architecture, End-to-End Workflow & Core Technical Highlights</p>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <a href="index.html" class="btn btn-outline">⬅️ กลับสู่หน้าหลัก</a>
+        <button onclick="window.print()" class="btn btn-primary">📥 บันทึกเป็นไฟล์รูปภาพ / PDF</button>
+      </div>
+    </div>
+
+    <!-- SECTION 1: SYSTEM ARCHITECTURE -->
+    <div class="section-header">
+      <span class="section-badge">System Architecture</span>
+      <h2 class="section-title">โครงสร้างสถาปัตยกรรมระบบทางเทคนิค</h2>
+      <p class="section-desc">ออกแบบภายใต้มาตรฐาน Cloud-Native & Serverless Microservices เพื่อความปลอดภัย ความเร็วสูง และความพร้อมใช้งาน 99.9%</p>
+    </div>
+
+    <div class="arch-box">
+      <!-- Architectural Layers Grid -->
+      <div class="arch-grid">
+        <!-- Layer 1 -->
+        <div class="layer-card">
+          <div class="layer-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">🌐</div>
+          <div class="layer-title">1. Presentation Layer</div>
+          <div class="layer-subtitle">Frontend Web Portal & Studio</div>
+          <div class="layer-desc">
+            หน้าอินเทอร์เฟซสำหรับผู้ยื่นคำร้อง และห้องทำงาน <strong>AI Blueprint Studio</strong> สำหรับวิศวกรที่มาพร้อมระบบ Drag & Zoom สไตล์ Photoshop
+          </div>
+          <div class="layer-tech-list">
+            <span class="tech-tag">Firebase Hosting CDN</span>
+            <span class="tech-tag">HTML5 / Vanilla CSS</span>
+            <span class="tech-tag">Responsive Glassmorphism</span>
+          </div>
+        </div>
+
+        <!-- Layer 2 -->
+        <div class="layer-card">
+          <div class="layer-icon" style="background: rgba(167, 139, 250, 0.15); color: #a78bfa;">⚡</div>
+          <div class="layer-title">2. API Gateway & Logic</div>
+          <div class="layer-subtitle">Cloud REST API Backend</div>
+          <div class="layer-desc">
+            ศูนย์กลางประมวลผลคำร้องจากแบบฟอร์ม ตรวจสอบความถูกต้องของข้อมูล (Validation) และจัดการเส้นทางคำสั่งเชื่อมต่อไปยัง AI และฐานข้อมูล
+          </div>
+          <div class="layer-tech-list">
+            <span class="tech-tag">Render Cloud Node.js</span>
+            <span class="tech-tag">Express Microservices</span>
+            <span class="tech-tag">CORS & Security Shield</span>
+          </div>
+        </div>
+
+        <!-- Layer 3 -->
+        <div class="layer-card">
+          <div class="layer-icon" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">🧠</div>
+          <div class="layer-title">3. AI Intelligence Layer</div>
+          <div class="layer-subtitle">Multimodal Vision Inspection</div>
+          <div class="layer-desc">
+            สมองกล AI อัจฉริยะที่สามารถอ่านไฟล์แปลน (PDF/IMG) วิเคราะห์ระยะร่น ทางหนีไฟ ความปลอดภัยโครงสร้าง และกฎหมายอาคารได้ในไม่กี่วินาที
+          </div>
+          <div class="layer-tech-list">
+            <span class="tech-tag">Google Gemini Multimodal AI</span>
+            <span class="tech-tag">Vision & Reasoning Engine</span>
+            <span class="tech-tag">Structured Engineering Prompt</span>
+          </div>
+        </div>
+
+        <!-- Layer 4 -->
+        <div class="layer-card">
+          <div class="layer-icon" style="background: rgba(52, 211, 153, 0.15); color: #34d399;">🗄️</div>
+          <div class="layer-title">4. Storage & Email Sync</div>
+          <div class="layer-subtitle">Real-time DB & Notification</div>
+          <div class="layer-desc">
+            ระบบบันทึกข้อมูลคำร้องลงตารางคลาวด์แบบ Real-time และระบบแจ้งเตือนอัตโนมัติผ่านอีเมล 2 ช่องทาง ทั้งถึงผู้ขอและทีมวิศวกรผู้ดูแลระบบ
+          </div>
+          <div class="layer-tech-list">
+            <span class="tech-tag">Google Sheets Cloud DB</span>
+            <span class="tech-tag">Google Drive Blueprint Storage</span>
+            <span class="tech-tag">Nodemailer SMTP Dispatch Engine</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: WORKFLOW TIMELINE -->
+    <div class="section-header">
+      <span class="section-badge">End-to-End Workflow</span>
+      <h2 class="section-title">ขั้นตอนการทำงานตั้งแต่ผู้ยื่นคำร้องถึงวิศวกร</h2>
+      <p class="section-desc">กระบวนการพิจารณาตรวจสอบแบบแปลนที่รวดเร็ว โปร่งใส และประสานงานอย่างไร้รอยต่อ</p>
+    </div>
+
+    <div class="arch-box">
+      <div class="workflow-timeline">
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-header">🏢 ยื่นคำร้องผ่านเว็บ</div>
+          <div class="step-desc">
+            ผู้ยื่นคำร้องหรือผู้รับเหมากรอกแบบฟอร์มตรวจสอบ/คัดลอกแปลน พร้อมแนบลิงก์ไฟล์แปลนและระบุรายละเอียดคำอธิบายเพิ่มเติมทางออนไลน์
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-header">⚡ ซิงค์ข้อมูล & แจ้งเตือน</div>
+          <div class="step-desc">
+            ระบบบันทึกข้อมูลลง Google Sheets ทันที พร้อมส่งอีเมลยืนยันการรับเรื่องถึงผู้ยื่นคำร้อง และส่งอีเมลแจ้งเตือนมีคำร้องใหม่ถึงวิศวกรทันที
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-header">✋ ตรวจแปลนด้วย Studio</div>
+          <div class="step-desc">
+            วิศวกรเปิดหน้าต่าง AI Blueprint Studio ใช้ปุ่มซูมสีขาวคมชัด และเครื่องมือ Hand Tool (`✋`) ลากดูรายละเอียดแปลนได้รอบทิศทาง
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <div class="step-header">🤖 วิเคราะห์เชิงลึกด้วย AI</div>
+          <div class="step-desc">
+            กดเริ่มวิเคราะห์ด้วย Gemini AI เพื่อประเมินข้อดี จุดควรระวัง และกฎหมายอาคาร จากนั้นวิศวกรพิจารณาอนุมัติหรือขอเอกสารเพิ่ม
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step-card">
+          <div class="step-num">5</div>
+          <div class="step-header">💌 แจ้งผลลัพธ์เป็นทางการ</div>
+          <div class="step-desc">
+            ระบบจัดทำรายงานสรุปผลการพิจารณา และจัดส่งอีเมลแจ้งข้อสั่งการหรืออนุมัติคัดลอกแบบแปลนถึงผู้ยื่นคำร้องอย่างรวดเร็วและแม่นยำ
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: KEY HIGHLIGHTS -->
+    <div class="section-header">
+      <span class="section-badge">Key Highlights</span>
+      <h2 class="section-title">6 จุดเด่นสำคัญของโปรเจค STeP CMU Blueprint Portal</h2>
+      <p class="section-desc">นวัตกรรมที่ช่วยยกระดับการให้บริการของอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่</p>
+    </div>
+
+    <div class="arch-box">
+      <div class="highlights-grid">
+        <!-- HL 1 -->
+        <div class="highlight-card">
+          <div class="hl-icon" style="color: #38bdf8;">🤖</div>
+          <div class="hl-title">1. AI Multimodal Vision Engine</div>
+          <div class="hl-desc">
+            ผสานรวมเทคโนโลยี Google Gemini AI ในการอ่านและตีความแบบแปลนวิศวกรรม 2D ช่วยตรวจสอบความปลอดภัยและกฎหมายอาคารอัตโนมัติ ลดเวลาทำงานของวิศวกรลงกว่า 70%
+          </div>
+        </div>
+
+        <!-- HL 2 -->
+        <div class="highlight-card">
+          <div class="hl-icon" style="color: #fbbf24;">✋</div>
+          <div class="hl-title">2. Photoshop-Style Hand Tool Studio</div>
+          <div class="hl-desc">
+            หน้าต่างตรวจสอบแปลนที่ให้ประสบการณ์เหมือนโปรแกรม CAD และ Photoshop: ลากย้ายหน้าต่างได้อิสระ (`Draggable`) พร้อมปุ่มซูมสีขาวเด่นชัด และเครื่องมือ Hand Tool (`✋`) สำหรับคลิกค้างแล้วลากดูแปลนรอบทิศทาง
+          </div>
+        </div>
+
+        <!-- HL 3 -->
+        <div class="highlight-card">
+          <div class="hl-icon" style="color: #34d399;">📊</div>
+          <div class="hl-title">3. Real-time Google Sheets Cloud DB</div>
+          <div class="hl-desc">
+            เชื่อมต่อข้อมูลทุกคำร้องเข้ากับ Google Sheets อัตโนมัติในเสี้ยววินาที ทำให้ทีมวิศวกรสามารถค้นหา จัดกลุ่ม ออกสถิติ และทำงานร่วมกัน (`Collaboration`) ได้ทันทีโดยไม่ต้องติดตั้งโปรแกรมเพิ่ม
+          </div>
+        </div>
+
+        <!-- HL 4 -->
+        <div class="highlight-card">
+          <div class="hl-icon" style="color: #a78bfa;">💌</div>
+          <div class="hl-title">4. Automated Dual Email Dispatcher</div>
+          <div class="hl-desc">
+            ระบบแจ้งเตือนผ่านอีเมล 2 ทิศทางอัตโนมัติ: ทั้งการแจ้งยืนยันรับคำร้องถึงผู้ยื่นคำร้อง และอีเมลแจ้งเตือนด่วนถึงทีมวิศวกร ทำให้ทุกขั้นตอนโปร่งใส ติดตามได้ และไม่มีคำร้องตกหล่น
+          </div>
+        </div>
+
+        <!-- HL 5 -->
+        <div class="highlight-card">
+          <div class="hl-icon" style="color: #f43f5e;">🎨</div>
+          <div class="hl-title">5. High-Contrast Ergonomic UI</div>
+          <div class="hl-desc">
+            ออกแบบด้วยสไตล์ Modern Dark Glassmorphism พร้อมคู่สีโทนสว่างที่อ่านง่าย (`High-Contrast Buttons & Tokens`) ช่วยลดความเมื่อยล้าของสายตาวิศวกรเมื่อต้องพิจารณาแบบแปลนที่มีรายละเอียดสูงต่อเนื่อง
+          </div>
+        </div>
+
+        <!-- HL 6 -->
+        <div class="highlight-card">
+          <div class="hl-icon" style="color: #0ea5e9;">🛡️</div>
+          <div class="hl-title">6. Enterprise Serverless Scalability</div>
+          <div class="hl-desc">
+            ทำงานบนคลาวด์มาตรฐานระดับโลก Firebase Hosting CDN และ Render Cloud Backend รองรับผู้ใช้งานจำนวนมากพร้อมกันได้อย่างเสถียร ปลอดภัย และพร้อมขยายบริการในอนาคตอย่างไร้ขีดจำกัด
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

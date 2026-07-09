@@ -100,59 +100,72 @@ try {
 }
 
 /**
- * Helper: Call Gemini 2.5 Flash via REST API
+ * Helper: Call Gemini with Automatic Fallback Models (Free Tier Multi-Model Resiliency)
  */
 async function callGemini(prompt, systemInstruction = "", fileAttachment = null) {
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    
-    const parts = [{ text: prompt }];
-    if (fileAttachment && fileAttachment.data && fileAttachment.mimeType) {
-      console.log(`🖼️ Attaching multimodal file (${fileAttachment.mimeType}) to Gemini prompt...`);
-      parts.push({
-        inlineData: {
-          mimeType: fileAttachment.mimeType,
-          data: fileAttachment.data
-        }
-      });
-    }
-
-    const body = {
-      contents: [
-        {
-          role: "user",
-          parts: parts
-        }
-      ]
-    };
-
-    if (systemInstruction) {
-      body.systemInstruction = {
-        parts: [{ text: systemInstruction }]
-      };
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      if (res.status === 429 || errText.includes("RESOURCE_EXHAUSTED") || errText.includes("quota") || errText.includes("limit")) {
-        throw new Error("⏳ โควต้าการใช้งาน AI ฟรีของ Gemini (Free Tier) หมดลงแล้วหรือใช้งานถี่เกินไป! ระบบจะรีเซ็ตโควต้าใหม่เวลา 14:00 น. ของทุกวัน (เที่ยงคืนเวลาแปซิฟิก) หรือรอประมาณ 1 นาทีสำหรับโควต้ารายนาที (🚫 ห้ามเปิดใช้งานแบบเสียเงินโดยเด็ดขาดตามข้อสั่งการ)");
+  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+  const parts = [{ text: prompt }];
+  
+  if (fileAttachment && fileAttachment.data && fileAttachment.mimeType) {
+    console.log(`🖼️ Attaching multimodal file (${fileAttachment.mimeType}) to Gemini prompt...`);
+    parts.push({
+      inlineData: {
+        mimeType: fileAttachment.mimeType,
+        data: fileAttachment.data
       }
-      throw new Error(`Gemini API Error (${res.status}): ${errText}`);
-    }
-
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่สามารถสร้างข้อความได้ในขณะนี้";
-    return text;
-  } catch (err) {
-    console.error("Gemini API Error:", err);
-    throw err;
+    });
   }
+
+  const body = {
+    contents: [{ role: "user", parts: parts }]
+  };
+
+  if (systemInstruction) {
+    body.systemInstruction = { parts: [{ text: systemInstruction }] };
+  }
+
+  let lastErrorText = "";
+  let isRateLimit = false;
+
+  for (const model of modelsToTry) {
+    try {
+      console.log(`🤖 Trying Gemini model: ${model}...`);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        lastErrorText = errText;
+        if (res.status === 429 || errText.includes("RESOURCE_EXHAUSTED") || errText.includes("quota") || errText.includes("limit")) {
+          isRateLimit = true;
+          console.warn(`⚠️ Model ${model} hit rate/quota limit (429). Waiting 2s before falling back to next model...`);
+          await new Promise(r => setTimeout(r, 2000));
+          continue; // Try next fallback model!
+        }
+        throw new Error(`Gemini API Error (${res.status}): ${errText}`);
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่สามารถสร้างข้อความได้ในขณะนี้";
+      return text;
+    } catch (err) {
+      if (!isRateLimit) {
+        console.error(`Gemini API Error on ${model}:`, err);
+        if (model === modelsToTry[modelsToTry.length - 1]) throw err;
+      }
+    }
+  }
+
+  // If we reach here, all fallback models were rate limited or exhausted
+  if (isRateLimit) {
+    throw new Error("⏳ โควต้าการใช้งาน AI ฟรีของ Gemini (Free Tier) หมดลงแล้วหรือใช้งานถี่เกินไปในทุกโมเดล (15 ครั้ง/นาที หรือ 1,500 ครั้ง/วัน)! กรุณารอประมาณ 1-2 นาทีหากเป็นโควต้ารายนาที หรือรอรีเซ็ตโควต้าใหม่เวลา 14:00 น. ของทุกวัน (🚫 ห้ามเปิดใช้งานแบบเสียเงินโดยเด็ดขาดตามข้อสั่งการวิศวกร)");
+  }
+  throw new Error(`Gemini API Error across all fallback models: ${lastErrorText}`);
 }
 
 /**

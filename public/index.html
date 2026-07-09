@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>STeP CMU Blueprint Portal - บริการตรวจสอบและขอคัดลอกแบบแปลนอาคาร</title>
-  <link rel="stylesheet" href="styles.css?v=20260708_v10_nocache">
+  <link rel="stylesheet" href="styles.css?v=20260708_v22_popup_blueprint">
 </head>
 <body>
 
@@ -82,6 +82,10 @@
                 <option value="อื่นๆ (ระบุในรายละเอียด)">อื่นๆ</option>
               </select>
             </div>
+            <div class="form-group full-width">
+              <label for="req-notes">📝 รายละเอียดเพิ่มเติม / คำอธิบายวัตถุประสงค์</label>
+              <textarea id="req-notes" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติมของงานที่ต้องการตรวจสอบ หรือคำอธิบายวัตถุประสงค์ (ไม่บังคับ)"></textarea>
+            </div>
             
             <div class="form-group full-width">
               <label>📎 แนบไฟล์เอกสารแบบแปลน (PDF, JPG, PNG) *</label>
@@ -94,8 +98,8 @@
               </div>
             </div>
 
-            <div class="form-group full-width" style="text-align: center; margin-top: 1rem;">
-              <button type="submit" class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;">
+            <div class="form-group full-width" style="text-align: center; margin-top: 1.5rem;">
+              <button type="submit" class="btn btn-primary btn-hero">
                 🚀 ยื่นคำร้องขอตรวจสอบแบบแปลน
               </button>
             </div>
@@ -160,8 +164,8 @@
               </div>
             </div>
 
-            <div class="form-group full-width" style="text-align: center; margin-top: 1rem;">
-              <button type="submit" class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;">
+            <div class="form-group full-width" style="text-align: center; margin-top: 1.5rem;">
+              <button type="submit" class="btn btn-primary btn-hero">
                 🚀 ยื่นคำร้องขอแบบแปลนอาคาร
               </button>
             </div>
@@ -177,9 +181,9 @@
           <h2>🔍 ตรวจสอบสถานะคำร้องแบบ Real-time</h2>
           <p>กรอกรหัสติดตามคำร้องที่ท่านได้รับทางอีเมล (เช่น REQ-1001) เพื่อเช็คสถานะและข้อความตอบกลับจากวิศวกร</p>
         </div>
-        <form id="form-check-status" style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
-          <input type="text" id="status-code-input" placeholder="พิมพ์รหัสคำร้อง เช่น REQ-1001" style="font-size:1.1rem; text-transform:uppercase; text-align:center;" required>
-          <button type="submit" class="btn btn-primary" style="white-space: nowrap; padding: 0 25px;">⚡ ค้นหา</button>
+        <form id="form-check-status" style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+          <input type="text" id="status-code-input" placeholder="พิมพ์รหัสคำร้อง เช่น REQ-1001" style="font-size:1.1rem; text-transform:uppercase; text-align:center; flex: 1; min-width: 200px;" required>
+          <button type="submit" class="btn btn-primary btn-md">⚡ ค้นหา</button>
         </form>
         <div id="status-result-container"></div>
       </div>
@@ -196,7 +200,7 @@
         </p>
         <form id="form-admin-login" style="display: flex; flex-direction: column; gap: 15px;">
           <input type="email" id="login-email" placeholder="กรอกอีเมล @step.cmu.ac.th หรืออีเมลแอดมิน" style="text-align:center; font-size:1rem;" required>
-          <button type="submit" class="btn btn-primary" style="padding: 14px;">🚀 ส่งลิงก์เข้าสู่ระบบ (Magic Link)</button>
+          <button type="submit" class="btn btn-primary btn-hero btn-block">🚀 ส่งลิงก์เข้าสู่ระบบ (Magic Link)</button>
         </form>
         <div id="login-msg-box"></div>
         <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); font-size:0.8rem; color:var(--text-dim);">
@@ -214,10 +218,11 @@
             <p>ตรวจสอบไฟล์แปลน วิเคราะห์ความถูกต้องด้วย AI และตอบกลับผู้ใช้แบบ Threading Email</p>
           </div>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <button class="btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); cursor: pointer; transition: all 0.2s;" onclick="openAnalyticsModal()">
-              <span style="font-size: 1.1rem;">📊</span> ดูเชิงสถิติ (Analytics)
+            <a href="architecture.html" target="_blank" class="btn btn-xs" style="padding: 8px 14px; background: rgba(167, 139, 250, 0.2); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">🗺️ แผนผังระบบ & Workflow</a>
+            <button class="btn btn-info btn-md" onclick="openAnalyticsModal()">
+              <span>📊</span> ดูเชิงสถิติ (Analytics)
             </button>
-            <button class="btn btn-secondary" onclick="loadAdminRequests()">🔄 รีเฟรชข้อมูล</button>
+            <button class="btn btn-secondary btn-md" onclick="loadAdminRequests()">🔄 รีเฟรชข้อมูล</button>
           </div>
         </div>
 
@@ -273,7 +278,7 @@
               <input type="file" id="kb-file-input" accept=".pdf, .jpg, .jpeg, .png, image/jpeg, image/png, application/pdf" style="display:none;" required>
             </div>
             <div>
-              <button type="submit" class="btn btn-primary" style="width:100%;">🚀 อัปโหลดเข้า KB</button>
+              <button type="submit" class="btn btn-primary btn-hero btn-block">🚀 อัปโหลดเข้า KB</button>
             </div>
           </form>
         </div>
@@ -310,58 +315,63 @@
         ⚠️ <strong>หมายเหตุ:</strong> การตอบกลับผลการพิจารณาและเอกสารจากเจ้าหน้าที่ จะตอบกลับโดยตรงในอีเมลฉบับเดิม (Reply Thread) ท่านสามารถตรวจสอบได้ในกล่องจดหมายของท่านหรือเช็คสถานะผ่านเว็บได้ตลอดเวลา
       </p>
 
-      <button class="btn btn-primary" style="width:100%;" onclick="document.getElementById('modal-success').classList.remove('active')">ตกลง / ปิดหน้าต่าง</button>
+      <button class="btn btn-primary btn-md btn-block" onclick="document.getElementById('modal-success').classList.remove('active')">ตกลง / ปิดหน้าต่าง</button>
     </div>
   </div>
 
-  <!-- MODAL: AI BLUEPRINT STUDIO & OFFICIAL REPLY CRAFTER (SPLIT-SCREEN) -->
+  <!-- MODAL: AI BLUEPRINT STUDIO & OFFICIAL REPLY CRAFTER (CLEAN & MODERN v14) -->
   <div id="modal-ai-studio" class="modal-overlay">
-    <div class="modal-content" style="max-width: 1450px; width: 96%; height: 92vh; display: flex; flex-direction: column; padding: 1.5rem; background: #0f172a; border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);">
-      <div class="modal-header" style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;">
-        <h3 id="studio-title" style="font-size: 1.3rem; color: #fbbf24; display: flex; align-items: center; gap: 10px;">
-          🚀 AI Blueprint Studio & Official Reply Crafter (สถานีงานวิเคราะห์แปลนและร่างคำตอบ)
+    <div class="studio-modal-content">
+      
+      <!-- HEADER -->
+      <div class="studio-header">
+        <h3 id="studio-title" class="studio-title">
+          🚀 <span class="highlight">AI Blueprint Studio</span> <span class="sub">| สถานีร่วมวิเคราะห์แปลนและร่างอีเมลตอบกลับทางการ</span>
         </h3>
-        <button class="close-btn" onclick="closeAIStudioModal()" style="font-size: 1.8rem; background: none; border: none; color: #94a3b8; cursor: pointer;">&times;</button>
+        <button class="close-btn" onclick="closeAIStudioModal()" title="ปิดหน้าต่าง">&times;</button>
       </div>
 
       <!-- SPLIT SCREEN GRID -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; overflow: hidden;">
+      <div class="studio-grid">
         
         <!-- ========================================== -->
         <!-- LEFT PANE: AI REVIEW & INTERACTIVE CHAT  -->
         <!-- ========================================== -->
-        <div style="display: flex; flex-direction: column; height: 100%; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 20px; overflow-y: auto;">
+        <div class="studio-pane studio-pane-left">
           
-          <!-- 1. TOP: BLUEPRINT ATTACHMENT -->
-          <div id="studio-blueprint-card" style="background: rgba(30, 41, 59, 0.8); border: 1px solid #3b82f6; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <div>
-              <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #60a5fa; font-weight: bold;">📐 ไฟล์แปลนก่อสร้างที่อัปโหลด (ด้านบนสุด)</span>
-              <div id="studio-blueprint-name" style="color: #fff; font-weight: 500; font-size: 0.95rem; margin-top: 4px;">กำลังโหลด...</div>
+          <!-- 1. TOP: BLUEPRINT FILE CARD -->
+          <div id="studio-blueprint-card" class="studio-card" style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.5); border-color: rgba(59, 130, 246, 0.4);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.8rem;">📐</span>
+              <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #60a5fa; font-weight: 600;">ไฟล์แปลนก่อสร้างที่ยื่นตรวจสอบ</span>
+                <div id="studio-blueprint-name" style="color: #fff; font-weight: 600; font-size: 0.95rem; margin-top: 2px;">กำลังโหลด...</div>
+              </div>
             </div>
-            <a id="studio-blueprint-link" href="#" target="_blank" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 6px; background: #2563eb;">
-              👁️ เปิดดูแปลน (Google Drive)
-            </a>
+            <button type="button" id="studio-blueprint-link" class="btn btn-primary btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: #2563eb; border-color: #3b82f6; cursor: pointer;" onclick="openBlueprintViewer()">
+              <span>👁️</span> เปิดดูแปลน
+            </button>
           </div>
 
-          <!-- 2. COMBINED COLLABORATIVE AI & ENGINEER DISCUSSION FEED -->
-          <div style="font-size: 0.95rem; font-weight: bold; color: #34d399; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <span>🤖🤝🧑‍🔧 พื้นที่ร่วมวิเคราะห์และหารือทางเทคนิค (AI & Engineer Collaborative Discussion):</span>
-            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="copyStudioAIReview()">📋 คัดลอกผลการตรวจสอบ</button>
+          <!-- 2. COLLABORATIVE DISCUSSION FEED -->
+          <div class="studio-section-header">
+            <span style="color: #38bdf8; display: flex; align-items: center; gap: 8px;">💬 หารือร่วมกับ AI (Interactive Technical Discussion)</span>
           </div>
-          <div id="studio-chat-feed" style="flex: 1; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 12px; padding: 16px; overflow-y: auto; margin-bottom: 12px; min-height: 380px; display: flex; flex-direction: column; gap: 14px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);">
+          
+          <div id="studio-chat-feed" class="studio-chat-feed">
             <!-- Messages will be injected here dynamically -->
           </div>
 
-          <!-- CHAT INPUT -->
-          <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-shrink: 0;">
-            <input type="text" id="studio-chat-input" placeholder="💬 ถาม AI เช่น 'ระยะยื่นระเบียงเป็นไปตามข้อกำหนดมั้ย'..." style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.9rem;" onkeypress="if(event.key==='Enter') sendStudioChatMessage()">
-            <button class="btn btn-secondary" onclick="sendStudioChatMessage()" style="padding: 0 18px; background: #0284c7; border-color: #0369a1; font-weight: bold;">ถาม AI</button>
+          <!-- 3. CHAT INPUT BAR -->
+          <div class="studio-input-bar">
+            <input type="text" id="studio-chat-input" placeholder="💬 พิมพ์คำถามหรือข้อสงสัยให้ AI ช่วยวิเคราะห์แปลน..." class="studio-input" style="flex: 1;" onkeypress="if(event.key==='Enter') sendStudioChatMessage()">
+            <button class="btn btn-primary btn-sm" style="padding: 11px 18px; white-space: nowrap; background: #0891b2; border-color: #06b6d4;" onclick="sendStudioChatMessage()">✨ ถาม AI</button>
           </div>
 
-          <!-- 4. BOTTOM: TRANSFER BUTTON -->
-          <div style="padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.15); flex-shrink: 0;">
-            <button type="button" class="btn btn-accent" onclick="transferStudioToReply()" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: bold; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-              ➡️ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลด้านขวา ✍️
+          <!-- 4. TRANSFER ACTION BANNER -->
+          <div style="padding-top: 4px;">
+            <button type="button" class="btn-studio-transfer" onclick="transferStudioToReply()">
+              <span>⚡ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลตอบกลับด้านขวา ➡️</span>
             </button>
           </div>
 
@@ -370,79 +380,84 @@
         <!-- ========================================== -->
         <!-- RIGHT PANE: OFFICIAL EMAIL CRAFTER       -->
         <!-- ========================================== -->
-        <div style="display: flex; flex-direction: column; height: 100%; padding-left: 10px; overflow-y: auto;">
+        <div class="studio-pane studio-pane-right">
           
-          <form id="studio-form-reply" style="display: flex; flex-direction: column; height: 100%; gap: 14px;" onsubmit="handleStudioSubmitReply(event)">
+          <form id="studio-form-reply" style="display: flex; flex-direction: column; height: 100%; gap: 18px;" onsubmit="handleStudioSubmitReply(event)">
+            <!-- Hidden elements preserved for 100% JS and backend API compatibility -->
             <input type="hidden" id="studio-reply-req-id">
+            <select id="studio-contact-select" style="display: none;"><option value="ทีมวิศวกร STeP CMU" selected></option></select>
+            <input type="hidden" id="studio-admin-notes" value="">
+            <input type="hidden" id="studio-eng-notes" value="">
 
-            <!-- 1. DECISION & CONTACT PERSON -->
-            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; flex-shrink: 0;">
-              <div>
-                <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px;">🎯 ผลการพิจารณา (Decision) *</label>
-                <select id="studio-status-select" style="width: 100%; padding: 10px; border-radius: 8px; background: #1e293b; color: #fbbf24; font-weight: bold; border: 1px solid rgba(255,255,255,0.2);" required>
-                  <option value="อนุมัติ">✅ อนุมัติ (Approved / จัดส่งแบบแปลนตามร้องขอ)</option>
-                  <option value="ขอแก้ไขรายละเอียด">⚠️ ขอแก้ไขรายละเอียด (Revision Required - ต้องแก้ไขบางจุด)</option>
-                  <option value="ปฏิเสธ">❌ ปฏิเสธ (Rejected / ไม่อนุมัติคำร้อง)</option>
+            <!-- 1. DECISION SELECTOR BANNER -->
+            <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.05) 100%); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 16px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); flex-shrink: 0;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">🎯</div>
+                <div>
+                  <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #fbbf24; font-weight: 700; display: block;">ผลการตรวจสอบแบบแปลน (Decision)</span>
+                  <div style="color: #ffffff; font-weight: 600; font-size: 1rem; margin-top: 2px;">เลือกคำตัดสินที่จะแจ้งผลอย่างเป็นทางการ:</div>
+                </div>
+              </div>
+              <div style="flex: 1; max-width: 320px;">
+                <select id="studio-status-select" class="studio-select" style="margin: 0; font-size: 0.95rem; font-weight: 600; background: #1e293b; border: 2px solid #f59e0b; color: #fff; padding: 12px 16px; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);" required>
+                  <option value="อนุมัติ">✅ อนุมัติ (Approved - จัดส่งแบบแปลน)</option>
+                  <option value="ขอแก้ไขรายละเอียด">⚠️ ขอแก้ไขรายละเอียด (Revision Required)</option>
+                  <option value="ปฏิเสธ">❌ ปฏิเสธ (Rejected - ไม่อนุมัติคำร้อง)</option>
                 </select>
               </div>
-              <div>
-                <label id="studio-contact-label" style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px;">👤 ลงนามผู้ติดต่อ (Contact Person)</label>
-                <select id="studio-contact-select" style="width: 100%; padding: 10px; border-radius: 8px; background: #1e293b; color: #38bdf8; font-weight: 500; border: 1px solid rgba(255,255,255,0.2);">
-                  <option value="ทีมวิศวกร STeP CMU">-- เลือกผู้รับผิดชอบ / ลงนาม --</option>
-                </select>
+            </div>
+
+            <!-- 2. OFFICIAL EMAIL CRAFTER AREA -->
+            <div style="display: flex; flex-direction: column; flex: 1; min-height: 300px; gap: 10px;">
+              <div class="studio-section-header" style="margin: 0; padding: 4px 0;">
+                <span style="color: #38bdf8; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.2rem;">📜</span> ร่างข้อความอีเมลทางการ (Official STeP CMU Reply):
+                </span>
+                <button type="button" class="btn btn-secondary btn-sm" style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; font-weight: 600; padding: 8px 14px; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);" onclick="handleStudioGenerateReply()">
+                  ⚡ ให้ AI เรียบเรียงร่างอีเมลใหม่
+                </button>
+              </div>
+              
+              <div id="studio-reply-editor-area" class="studio-editor" contenteditable="true" style="flex: 1; min-height: 250px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 1.5rem; color: #f8fafc; font-size: 0.95rem; line-height: 1.75; overflow-y: auto; box-shadow: inset 0 4px 15px rgba(0,0,0,0.5);">
+                <div style="text-align: center; padding: 3rem 1.5rem; color: #64748b;">
+                  <div style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
+                  <p style="font-size: 1rem; line-height: 1.8; margin: 0;">
+                    👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br>
+                    <strong style="color: #fbbf24; font-size: 1.05rem;">"⚡ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลตอบกลับด้านขวา ➡️"</strong><br>
+                    เพื่อให้ระบบ AI ร่างข้อความอีเมลตอบกลับทางการในนาม STeP CMU ให้อัตโนมัติในช่องนี้
+                  </p>
+                </div>
               </div>
             </div>
 
-            <!-- 2. ADMIN NOTES & ENGINEER NOTES -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex-shrink: 0;">
-              <div>
-                <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px;">📝 ความเห็นผู้ดูแลระบบ / ข้อสั่งการ</label>
-                <input type="text" id="studio-admin-notes" placeholder="เช่น อนุมัติให้ดำเนินการได้ตามวัตถุประสงค์" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
-              </div>
-              <div>
-                <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px;">🧑‍🔧 ข้อแนะนำและสรุปผลการตรวจสอบทางเทคนิค</label>
-                <input type="text" id="studio-eng-notes" placeholder="ข้อสรุปและข้อแนะนำจะถูกเติมอัตโนมัติเมื่อกดปุ่มย้ายข้อมูล" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
-              </div>
-            </div>
-
-            <!-- 3. EMAIL EDITOR AREA -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-shrink: 0;">
-              <span style="font-size: 0.9rem; font-weight: bold; color: #f1f5f9;">📜 ร่างข้อความอีเมลตอบกลับทางการ (STeP CMU):</span>
-              <button type="button" class="btn btn-accent" style="padding: 6px 14px; font-size: 0.8rem; background: #475569;" onclick="handleStudioGenerateReply()">
-                ⚡ ให้ AI เรียบเรียงร่างอีเมลใหม่
-              </button>
-            </div>
-            
-            <div id="studio-reply-editor-area" contenteditable="true" style="flex: 1; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(245,158,11,0.5); border-radius: 12px; padding: 1.2rem; color: #ffffff; font-size: 0.95rem; line-height: 1.7; overflow-y: auto; min-height: 220px; outline: none; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);">
-              <p style="color: #64748b; text-align: center; padding-top: 3rem;">
-                👈 ตรวจสอบแปลนและพูดคุยกับ AI ทางด้านซ้าย จากนั้นกดปุ่ม <br><strong style="color: #f59e0b;">"➡️ สรุปผลร่วมกับ AI และย้ายข้อมูลไปร่างอีเมลด้านขวา"</strong><br> เพื่อให้ AI ร่างข้อความอีเมลตอบกลับทางการให้อัตโนมัติในช่องนี้
-              </p>
-            </div>
-
-            <!-- 4. ATTACHMENT UPLOADER -->
-            <div style="background: rgba(15, 23, 42, 0.8); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 10px 14px; margin-top: 4px; flex-shrink: 0;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 0.85rem; font-weight: bold; color: #38bdf8;">📎 เอกสารแนบเพิ่มเติม (ส่งแปลนแก้ไข / เอกสารแนะนำ / CAD / 3D / PDF / รูปภาพ):</span>
-                <label class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.75rem; background: #0284c7; border-color: #0369a1; cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 4px; color: #fff;">
-                  <span>➕ อัปโหลดไฟล์แนบ</span>
+            <!-- 3. ATTACHMENT UPLOADER -->
+            <div class="studio-attachment-box" style="background: rgba(30, 41, 59, 0.5); border: 1px dashed rgba(148, 163, 184, 0.35); border-radius: 14px; padding: 14px 18px; flex-shrink: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                <span style="font-size: 0.88rem; font-weight: 600; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.1rem;">📎</span> แนบไฟล์เพิ่มเติม (CAD / 3D / PDF / รูปภาพ / เอกสารแนะนำ):
+                </span>
+                <label class="btn btn-secondary btn-xs" style="cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 6px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; font-weight: 600; padding: 6px 14px;">
+                  <span>➕ เพิ่มไฟล์แนบ</span>
                   <input type="file" id="studio-attachment-input" style="display: none;" multiple accept=".pdf,.png,.jpg,.jpeg,.dwg,.dxf,.skp,.obj,.fbx,.stl,.rvt,.ifc,.step,.iges,.zip,.rar,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onchange="handleStudioUploadAttachments(event)">
                 </label>
               </div>
-              <div id="studio-attachment-list" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 20px; align-items: center;">
-                <span style="font-size: 0.75rem; color: #64748b; font-style: italic;">ยังไม่ได้แนบเอกสารเพิ่มเติม (สามารถอัปโหลดไฟล์ CAD, SketchUp, 3D, PDF หรือรูปภาพ เพื่อส่งลิงก์ดาวน์โหลดให้ผู้ยื่นคำร้องได้)</span>
+              <div id="studio-attachment-list" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 24px; align-items: center;">
+                <span style="font-size: 0.8rem; color: #64748b; font-style: italic;">ยังไม่ได้แนบเอกสารเพิ่มเติม (สามารถอัปโหลดไฟล์เพื่อให้ผู้ยื่นคำร้องดาวน์โหลดได้)</span>
               </div>
             </div>
 
-            <!-- 4. BOTTOM ACTION BAR -->
-            <div style="background: rgba(30, 41, 59, 0.6); padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-              <span>ℹ️ <strong>Email Threading:</strong> เมื่อกดส่ง ระบบจะส่งอีเมลต่อท้ายกระทู้เดิม (Reply Thread) ผ่าน Gmail API พร้อมแนบข้อมูลผู้ติดต่อที่เลือก</span>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 4px; flex-shrink: 0;">
-              <button type="button" class="btn btn-secondary" onclick="closeAIStudioModal()" style="padding: 10px 20px;">ยกเลิก</button>
-              <button type="submit" class="btn btn-primary" style="padding: 12px 28px; font-size: 1rem; font-weight: bold; background: #10b981; border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
-                📨 ยืนยันบันทึกผลและส่งอีเมลทางการ
-              </button>
+            <!-- 4. BOTTOM FOOTER BAR -->
+            <div class="studio-footer" style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 14px 20px; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+              <span style="font-size: 0.82rem; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">ℹ️</span> 
+                <span><strong>Gmail Threading:</strong> ระบบจะส่งต่อท้ายกระทู้เดิมอัตโนมัติ</span>
+              </span>
+              <div style="display: flex; gap: 14px; align-items: center;">
+                <button type="button" class="btn btn-secondary btn-md" style="padding: 10px 22px;" onclick="closeAIStudioModal()">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary btn-md" style="padding: 12px 28px; font-weight: 700; font-size: 0.95rem; background: var(--primary-gradient); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);">
+                  📨 ยืนยันบันทึกผลและส่งอีเมลทางการ
+                </button>
+              </div>
             </div>
 
           </form>
@@ -462,9 +477,9 @@
       <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;" id="delete-confirm-text">
         คุณต้องการลบคำร้องนี้ออกจากระบบจริงหรือไม่?
       </p>
-      <div style="display: flex; gap: 12px; justify-content: center;">
-        <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="closeDeleteModal()">ยกเลิก</button>
-        <button class="btn" style="flex: 1; padding: 10px; background: #ef4444; color: white; border: none; font-weight: bold; border-radius: 8px; cursor: pointer;" onclick="executeDeleteRequest()">ยืนยันลบข้อมูล</button>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-md" style="flex: 1; min-width: 120px;" onclick="closeDeleteModal()">ยกเลิก</button>
+        <button class="btn btn-danger btn-md" style="flex: 1; min-width: 120px;" onclick="executeDeleteRequest()">ยืนยันลบข้อมูล</button>
       </div>
     </div>
   </div>
@@ -480,7 +495,7 @@
       <h4 style="color: #e2e8f0; font-size: 0.95rem; margin: 0 0 8px 0;">📨 เนื้อหาข้อความอีเมลที่ตอบกลับ (Email Body):</h4>
       <div id="reply-details-body" style="flex: 1; overflow-y: auto; background: #ffffff; color: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Sarabun', 'Prompt', sans-serif; line-height: 1.6;"></div>
       <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-        <button class="btn btn-secondary" onclick="closeReplyDetailsModal()" style="padding: 10px 24px;">ปิดหน้าต่าง</button>
+        <button class="btn btn-secondary btn-md" onclick="closeReplyDetailsModal()">ปิดหน้าต่าง</button>
       </div>
     </div>
   </div>
@@ -497,12 +512,114 @@
       </div>
       <div id="analytics-content-area" style="flex: 1; overflow-y: auto; padding-right: 5px;"></div>
       <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-        <button class="btn btn-secondary" onclick="closeAnalyticsModal()" style="padding: 10px 24px;">ปิดหน้าต่าง</button>
+        <button class="btn btn-secondary btn-md" onclick="closeAnalyticsModal()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QUICK UPLOAD ATTACHMENTS & DOCUMENT VAULT -->
+  <div id="modal-quick-upload" class="modal-overlay">
+    <div class="modal-content" style="max-width: 680px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 2rem; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <h3 style="font-size: 1.3rem; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 8px;">📎 อัปโหลดเอกสารแนะนำและไฟล์แบบแปลน (Multi-format Uploader)</h3>
+          <p style="color: #94a3b8; font-size: 0.85rem; margin: 4px 0 0 0;">รองรับไฟล์ PDF, PNG, JPEG, CAD (.dwg/.dxf), SketchUp (.skp), 3D Files (.rvt/.obj/.stl/.step) และ ZIP</p>
+        </div>
+        <button class="close-btn" onclick="closeQuickUploadModal()" style="font-size: 1.8rem; background: none; border: none; color: #94a3b8; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; overflow-y: auto; padding-right: 5px;">
+        <div>
+          <label style="font-size: 0.9rem; color: #cbd5e1; display: block; margin-bottom: 6px;">🎯 อ้างอิงคำร้องที่เกี่ยวข้อง (ถ้าต้องการผูกกับคำร้อง):</label>
+          <select id="quick-upload-req-select" style="width: 100%; padding: 10px; border-radius: 8px; background: #1e293b; color: #fbbf24; font-weight: bold; border: 1px solid rgba(255,255,255,0.2);">
+            <option value="">-- ไม่ระบุ / อัปโหลดเป็นเอกสารแนะนำคลังกลาง --</option>
+          </select>
+        </div>
+
+        <div class="file-upload-area" style="border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.05); padding: 1.8rem; text-align: center; border-radius: 12px;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📂</div>
+          <h4 style="color: #fff; margin-bottom: 6px;">เลือกไฟล์หรือลากไฟล์มาวางที่นี่ (อัปโหลดได้หลายไฟล์พร้อมกัน)</h4>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px;">รองรับ: .pdf, .png, .jpg, .dwg, .dxf, .skp, .obj, .fbx, .stl, .rvt, .ifc, .step, .zip, .doc, .xls, .ppt</p>
+          <label class="btn btn-primary btn-md" style="cursor: pointer; display: inline-flex; margin: 0;">
+            <span>➕ เลือกไฟล์อัปโหลด</span>
+            <input type="file" id="quick-upload-file-input" style="display: none;" multiple accept=".pdf,.png,.jpg,.jpeg,.dwg,.dxf,.skp,.obj,.fbx,.stl,.rvt,.ifc,.step,.iges,.zip,.rar,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onchange="handleQuickUploadFiles(event)">
+          </label>
+        </div>
+
+        <div id="quick-upload-status" style="display: none; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; padding: 10px; border-radius: 8px; font-size: 0.85rem; text-align: center;"></div>
+
+        <div>
+          <h4 style="color: #e2e8f0; font-size: 0.95rem; margin: 0 0 8px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+            <span>📑 รายการไฟล์ที่อัปโหลดสำเร็จในครั้งนี้:</span>
+            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">(คลิกเพื่อเปิดดู หรือคัดลอกลิงก์ส่งต่อได้ทันที)</span>
+          </h4>
+          <div id="quick-upload-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+            <span style="font-size: 0.8rem; color: #64748b; font-style: italic; text-align: center; padding: 10px;">ยังไม่มีไฟล์ที่อัปโหลดในรอบนี้</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button class="btn btn-secondary btn-md" onclick="closeQuickUploadModal()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING BLUEPRINT VIEWER POPUP (DRAGGABLE & ZOOMABLE) -->
+  <div id="blueprint-viewer-popup" style="display: none; position: fixed; top: 80px; left: 120px; width: 850px; height: 620px; background: rgba(15, 23, 42, 0.98); border: 2px solid #38bdf8; border-radius: 16px; box-shadow: 0 25px 60px rgba(0,0,0,0.85), 0 0 25px rgba(56,189,248,0.3); z-index: 10000; flex-direction: column; overflow: hidden; resize: both; min-width: 450px; min-height: 350px;">
+    <!-- Draggable Header Bar -->
+    <!-- Draggable Header Bar -->
+    <div id="blueprint-viewer-header" style="background: linear-gradient(90deg, #1e293b, #0f172a); border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding: 10px 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; cursor: move; user-select: none;">
+      <!-- Left Side: Title & Tool Buttons (Top Left) -->
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; font-size: 0.95rem; white-space: nowrap;">
+          <span style="font-size: 1.3rem;">📐</span>
+          <span id="blueprint-viewer-title" style="color: #38bdf8; font-weight: 700;">ตรวจสอบแบบแปลนโครงการ</span>
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">(คลิกค้างเพื่อย้ายหน้าต่าง)</span>
+        </div>
+
+        <!-- Tool Buttons (Top Left) -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- Photoshop Hand Tool (Pan Toggle) -->
+          <button type="button" id="blueprint-tool-pan" class="btn btn-xs" style="padding: 5px 14px; font-weight: 700; font-size: 0.95rem; background: #fbbf24; color: #0f172a; border: 2px solid #f59e0b; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 0 12px rgba(251,191,36,0.4);" onclick="toggleBlueprintPanTool()" title="เครื่องมือเลื่อนแปลน (Photoshop Hand Tool)">
+            <span style="font-size: 1.15rem;">✋</span> <span id="pan-tool-text">เลื่อนแปลน (ON)</span>
+          </button>
+
+          <!-- Clear White Zoom Minus Button -->
+          <button type="button" class="btn btn-xs" style="padding: 4px 14px; font-weight: 900; font-size: 1.25rem; background: #ffffff; color: #0f172a; border: 2px solid #cbd5e1; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); line-height: 1;" onclick="zoomBlueprint(-0.25)" title="ซูมออก (Zoom Out)">
+            ➖
+          </button>
+          
+          <span id="blueprint-viewer-zoom-level" style="color: #ffffff; font-weight: 800; font-size: 0.95rem; min-width: 55px; text-align: center; background: rgba(0,0,0,0.5); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">100%</span>
+          
+          <!-- Clear White Zoom Plus Button -->
+          <button type="button" class="btn btn-xs" style="padding: 4px 14px; font-weight: 900; font-size: 1.25rem; background: #ffffff; color: #0f172a; border: 2px solid #cbd5e1; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); line-height: 1;" onclick="zoomBlueprint(0.25)" title="ซูมเข้า (Zoom In)">
+            ➕
+          </button>
+          
+          <!-- Reset Button -->
+          <button type="button" class="btn btn-xs" style="padding: 5px 12px; font-weight: 600; font-size: 0.85rem; background: #334155; color: #e2e8f0; border: 1px solid #475569; margin-left: 2px; border-radius: 8px; cursor: pointer;" onclick="resetZoomBlueprint()" title="รีเซ็ตขนาดและตำแหน่ง">🔍 รีเซ็ต</button>
+        </div>
+      </div>
+
+      <!-- Right Side: New Tab & Close Buttons (Top Right Corner) -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+        <!-- Open in New Tab option -->
+        <a id="blueprint-viewer-external" href="#" target="_blank" class="btn btn-xs" style="padding: 5px 14px; font-size: 0.85rem; font-weight: 600; text-decoration: none; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;" title="เปิดในแท็บใหม่">🔗 แท็บใหม่</a>
+        <!-- Close Button -->
+        <button type="button" class="btn btn-xs" style="background: #ef4444; color: #fff; border: 2px solid #dc2626; padding: 5px 16px; font-weight: 800; font-size: 1rem; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(239,68,68,0.4);" onclick="closeBlueprintViewer()">✕</button>
+      </div>
+    </div>
+    <!-- Zoom & Pan Content Area -->
+    <div id="blueprint-viewer-body" style="flex: 1; position: relative; overflow: auto; background: #0b0f19; display: flex; align-items: center; justify-content: center; cursor: grab; user-select: none;">
+      <!-- Photoshop Hand Tool Transparent Overlay -->
+      <div id="blueprint-pan-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; cursor: grab; display: block;"></div>
+      <div id="blueprint-zoom-container" style="transition: transform 0.08s ease-out; transform-origin: center center; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 1;">
       </div>
     </div>
   </div>
 
   <!-- Scripts -->
-  <script src="app.js?v=20260708_v11_dynamic_routing"></script>
+  <script src="app.js?v=20260708_v24_layout_buttons"></script>
 </body>
 </html>
